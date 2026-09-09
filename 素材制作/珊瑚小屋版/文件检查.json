@@ -1,0 +1,65 @@
+[
+  {
+    "file": "decorations.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  },
+  {
+    "file": "capybara.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  },
+  {
+    "file": "panda.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  },
+  {
+    "file": "background.png",
+    "size": [
+      941,
+      1672
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  },
+  {
+    "file": "icons.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  },
+  {
+    "file": "plants.png",
+    "size": [
+      1402,
+      1122
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  },
+  {
+    "file": "soil.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "has_transparency": false
+  }
+]

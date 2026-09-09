@@ -1,0 +1,378 @@
+[
+  {
+    "file": "assets/coral/sprites/animals/animal_capybara_idle.png",
+    "size": [
+      512,
+      512
+    ],
+    "transparent_pixels": 133626
+  },
+  {
+    "file": "assets/coral/sprites/animals/animal_panda_idle.png",
+    "size": [
+      512,
+      512
+    ],
+    "transparent_pixels": 114629
+  },
+  {
+    "file": "assets/coral/sprites/plants/daisy/plant_daisy_seed.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 63775
+  },
+  {
+    "file": "assets/coral/sprites/plants/carrot/plant_carrot_seed.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 63707
+  },
+  {
+    "file": "assets/coral/sprites/plants/strawberry/plant_strawberry_seed.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 63771
+  },
+  {
+    "file": "assets/coral/sprites/plants/sunflower/plant_sunflower_seed.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 63650
+  },
+  {
+    "file": "assets/coral/sprites/plants/pumpkin/plant_pumpkin_seed.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 63675
+  },
+  {
+    "file": "assets/coral/sprites/plants/daisy/plant_daisy_sprout.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 58784
+  },
+  {
+    "file": "assets/coral/sprites/plants/carrot/plant_carrot_sprout.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 58905
+  },
+  {
+    "file": "assets/coral/sprites/plants/strawberry/plant_strawberry_sprout.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 58521
+  },
+  {
+    "file": "assets/coral/sprites/plants/sunflower/plant_sunflower_sprout.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 58173
+  },
+  {
+    "file": "assets/coral/sprites/plants/pumpkin/plant_pumpkin_sprout.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 58192
+  },
+  {
+    "file": "assets/coral/sprites/plants/daisy/plant_daisy_growing.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 46595
+  },
+  {
+    "file": "assets/coral/sprites/plants/carrot/plant_carrot_growing.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 48171
+  },
+  {
+    "file": "assets/coral/sprites/plants/strawberry/plant_strawberry_growing.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 45840
+  },
+  {
+    "file": "assets/coral/sprites/plants/sunflower/plant_sunflower_growing.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 49336
+  },
+  {
+    "file": "assets/coral/sprites/plants/pumpkin/plant_pumpkin_growing.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 49019
+  },
+  {
+    "file": "assets/coral/sprites/plants/daisy/plant_daisy_mature.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 34213
+  },
+  {
+    "file": "assets/coral/sprites/plants/carrot/plant_carrot_mature.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 41130
+  },
+  {
+    "file": "assets/coral/sprites/plants/strawberry/plant_strawberry_mature.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 33531
+  },
+  {
+    "file": "assets/coral/sprites/plants/sunflower/plant_sunflower_mature.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 34390
+  },
+  {
+    "file": "assets/coral/sprites/plants/pumpkin/plant_pumpkin_mature.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 37670
+  },
+  {
+    "file": "assets/coral/sprites/decorations/decoration_daisy_flowerpot.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 33606
+  },
+  {
+    "file": "assets/coral/sprites/decorations/decoration_stepping_stones.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 43976
+  },
+  {
+    "file": "assets/coral/sprites/decorations/decoration_wooden_bench.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 34796
+  },
+  {
+    "file": "assets/coral/sprites/decorations/decoration_courtyard_lamp.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 47527
+  },
+  {
+    "file": "assets/coral/sprites/decorations/decoration_stone_fountain.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 42515
+  },
+  {
+    "file": "assets/coral/sprites/decorations/decoration_sprout_sign.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 38369
+  },
+  {
+    "file": "assets/coral/icons/core/icon_shop.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 22461
+  },
+  {
+    "file": "assets/coral/icons/core/icon_seed.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 28662
+  },
+  {
+    "file": "assets/coral/icons/core/icon_harvest_tool.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 25225
+  },
+  {
+    "file": "assets/coral/icons/core/icon_edit.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 26686
+  },
+  {
+    "file": "assets/coral/icons/core/icon_settings.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 26725
+  },
+  {
+    "file": "assets/coral/icons/core/icon_warehouse.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 31258
+  },
+  {
+    "file": "assets/coral/icons/core/icon_coin.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 23426
+  },
+  {
+    "file": "assets/coral/icons/core/icon_exp.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 39882
+  },
+  {
+    "file": "assets/coral/icons/seeds/icon_seed_daisy.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 28025
+  },
+  {
+    "file": "assets/coral/icons/seeds/icon_seed_carrot.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 26817
+  },
+  {
+    "file": "assets/coral/icons/seeds/icon_seed_strawberry.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 27129
+  },
+  {
+    "file": "assets/coral/icons/seeds/icon_seed_sunflower.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 26491
+  },
+  {
+    "file": "assets/coral/icons/seeds/icon_seed_pumpkin.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 27216
+  },
+  {
+    "file": "assets/coral/icons/core/icon_lock.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 30205
+  },
+  {
+    "file": "assets/coral/icons/core/icon_confirm.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 42600
+  },
+  {
+    "file": "assets/coral/icons/core/icon_cancel.png",
+    "size": [
+      256,
+      256
+    ],
+    "transparent_pixels": 24604
+  },
+  {
+    "file": "assets/coral/sprites/plots/plot_empty.png",
+    "size": [
+      384,
+      240
+    ],
+    "transparent_pixels": 44194
+  },
+  {
+    "file": "assets/coral/sprites/plots/plot_locked.png",
+    "size": [
+      384,
+      240
+    ],
+    "transparent_pixels": 44194
+  },
+  {
+    "file": "assets/coral/sprites/plots/plot_unlockable.png",
+    "size": [
+      384,
+      240
+    ],
+    "transparent_pixels": 44194
+  }
+]
