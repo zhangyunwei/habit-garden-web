@@ -19,5 +19,5 @@ const assert=require('node:assert/strict');const path=require('node:path');
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(400);await page.screenshot({path:path.join(__dirname,'level2-mobile.png')});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
  await page.locator('#shop').click();await page.waitForTimeout(350);await page.screenshot({path:path.join(__dirname,'shop-mobile.png')});await page.locator('[data-action="close-modal"]').click();
  // Reload catches offline maturity from saved timestamps.
- await page.locator('#seedMode').click();await page.locator('#plot0').click();assert.equal(await page.evaluate(()=>state.plots[0].plant.duration),7);await page.reload();await page.waitForTimeout(7200);assert.equal(await page.evaluate(()=>Garden.stage(state.plots[0].plant).stage),'mature');
+ await page.locator('#plot0').click();await page.locator('#seedBubble [data-seed=daisy]').click();assert.equal(await page.evaluate(()=>state.plots[0].plant.duration),7);await page.reload();await page.waitForTimeout(7200);assert.equal(await page.evaluate(()=>Garden.stage(state.plots[0].plant).stage),'mature');
  assert.deepEqual(errors,[]);console.log('BROWSER_CORE_FLOW_OK');await browser.close();})().catch(e=>{console.error(e);process.exit(1)});

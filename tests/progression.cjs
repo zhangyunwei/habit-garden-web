@@ -10,13 +10,12 @@ const assert=require('node:assert/strict'),path=require('node:path');
  const advance=async ms=>{await page.clock.fastForward(ms);await page.waitForTimeout(50);};
  const dismissLevel=async()=>{await advance(1000);if(await page.locator('#confirm').isVisible())await click('[data-action="confirm-yes"]');};
  const sell=async()=>{await click('#warehouse');await click('[data-action="sell-all"]');await click('[data-action="confirm-yes"]');if(await page.locator('#modal').isVisible())await click('[data-action="close-modal"]');};
- await click('#plot0');await click('#plot0');await advance(3500);await click('#plot0');await click('#plot0');await sell();assert.equal(await page.evaluate(()=>state.tutorial),'done');
+ await click('#plot0');await click('#seedBubble [data-seed=daisy]');await advance(3500);await click('#plot0');await click('#plot0');await sell();assert.equal(await page.evaluate(()=>state.tutorial),'done');
  let cycles=0;
  async function growBatch(id){
   const seeds=await page.evaluate(id=>state.seeds[id],id);
   if(seeds<4){await click('#shop');await click(`[data-action="buy:seeds:${id}:5"]`);await click('[data-action="close-modal"]');}
-  await click('#seedMode');await click(`[data-seed="${id}"]`);
-  for(let i=0;i<4;i++)await click('#plot'+i);
+  for(let i=0;i<4;i++){await click('#plot'+i);await click(`#seedBubble [data-seed="${id}"]`);}
   assert.equal(await page.evaluate(()=>state.plots.slice(0,4).filter(p=>p.plant).length),4);
   await advance(31000);await click('#harvestMode');
   for(let i=0;i<4;i++)await click('#plot'+i);
