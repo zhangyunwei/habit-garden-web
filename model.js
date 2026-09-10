@@ -17,15 +17,16 @@ const decorations=[
 ];
 const animals=[{id:'capybara',name:'卡皮巴拉',level:2,cost:30,skill:'成长时间 −20%'},{id:'panda',name:'熊猫',level:4,cost:60,skill:'出售价格 +10%'}];
 const thresholds=[0,20,50,100,170];
-const plotPositions=Array.from({length:8},(_,i)=>({x:170+(i%4)*145-Math.floor(i/4)*45,y:700+(i%4)*43+Math.floor(i/4)*155}));
+const gridPoint=(col,row)=>({x:230+col*93-row*78,y:740+col*35+row*61});
+const plotPositions=Array.from({length:8},(_,i)=>gridPoint(i%4,Math.floor(i/4)));
 // Visible soil corners, relative to its 166 × 104 sprite canvas.
-const plotHull=[[-12,-47],[80,-9],[12,51],[-80,15]];
+const plotHull=[[-7,-43],[80,-10],[7,47],[-80,14]];
 function plotAt(x,y){return plotPositions.findIndex(p=>plotHull.every((a,i)=>{const b=plotHull[(i+1)%4];return (b[0]-a[0])*(y-p.y-a[1])-(b[1]-a[1])*(x-p.x-a[0])>=0;}));}
 
 const clone=x=>JSON.parse(JSON.stringify(x));
 const level=s=>thresholds.filter(x=>s.xp>=x).length;
 const zero=()=>Object.fromEntries(plants.map(p=>[p.id,0]));
-function initial(){return {version:1,layoutVersion:2,coins:50,xp:0,seeds:{...zero(),daisy:4},harvest:zero(),plots:Array.from({length:8},(_,i)=>({open:i<4,plant:null})),decorations:[],animals:{capybara:{owned:false,active:false,x:120,y:620},panda:{owned:false,active:false,x:630,y:700}},tutorial:'land',sound:true,newUnlock:false,nextId:1};}
+function initial(){return {version:1,layoutVersion:4,coins:50,xp:0,seeds:{...zero(),daisy:4},harvest:zero(),plots:Array.from({length:8},(_,i)=>({open:i<4,plant:null})),decorations:[],animals:{capybara:{owned:false,active:false,x:120,y:620},panda:{owned:false,active:false,x:630,y:700}},tutorial:'land',sound:true,newUnlock:false,nextId:1};}
 function check(ok,msg){if(!ok)throw Error(msg);}
 function active(s,id){return s.animals[id].owned&&s.animals[id].active;}
 function growth(s,id){return Math.ceil(plants.find(p=>p.id===id).time*(active(s,'capybara')?.8:1));}
@@ -59,13 +60,18 @@ function sellAll(s){check(total(s)>0,'仓库还没有收获物');let gain=0;for(
 function unlock(s,i){check(i>=4&&i<8,'土地编号无效');check(!s.plots[i].open,'土地已经开垦');check(level(s)>=i-2,`家园 ${i-2} 级解锁`);check(s.plots[i-1].open,'请先开垦前一块土地');const cost=[15,20,30,40][i-4];check(s.coins>=cost,`金币不足，还差 ${cost-s.coins} 金币`);s.coins-=cost;s.plots[i].open=true;}
 function toggleAnimal(s,id){check(s.animals[id]?.owned,'请先购买动物');s.animals[id].active=!s.animals[id].active;return s.animals[id].active;}
 function rescue(s){if(s.coins===0&&Object.values(s.seeds).every(n=>n===0)&&s.plots.every(p=>!p.plant)){s.seeds.daisy=2;return true;}return false;}
-// Only open grass cells; excludes buildings, paths, pond, plots and fence.
-function validPosition(s,x,y,uid){if(x<100||x>640||y<600||y>1020)return false;if(y>970&&x>290&&x<455)return false;
- if(plotPositions.some(p=>Math.abs(x-p.x)<105&&Math.abs(y-p.y)<80))return false;
- if(y<660&&x>470)return false;
- if(s.decorations.some(d=>d.placed&&d.uid!==uid&&Math.abs(x-d.x)<45&&Math.abs(y-d.y)<45))return false;
- if(animals.some(a=>a.id!==uid&&active(s,a.id)&&Math.abs(x-s.animals[a.id].x)<45&&Math.abs(y-s.animals[a.id].y)<45))return false;return true;}
-function place(s,uid,x,y){x=Math.round(x/50)*50;y=Math.round(y/50)*50;check(validPosition(s,x,y,uid),'这里不能摆放，请选择空闲草地');const d=typeof uid==='number'?s.decorations.find(d=>d.uid===uid):s.animals[uid];check(d,'物品不存在');Object.assign(d,{x,y});if(typeof uid==='number')d.placed=true;else d.active=true;}
+// Shared isometric lattice: soil-shaped cells with a narrow grass seam.
+const editCells=[];
+for(let row=-8;row<=12;row++)for(let col=-8;col<=12;col++){
+ const {x,y}=gridPoint(col,row);
+ if(x<85||x>665||y<595||y>1280||y>1530-.64*x)continue;
+ editCells.push({x,y,plot:row>=0&&row<2&&col>=0&&col<4});
+}
+function cellAt(x,y){return editCells.find(p=>plotHull.every((a,i)=>{const b=plotHull[(i+1)%4];return (b[0]-a[0])*(y-p.y-a[1])-(b[1]-a[1])*(x-p.x-a[0])>=0;}));}
+function validPosition(s,x,y,uid){const cell=cellAt(x,y);if(!cell||cell.plot)return false;
+ return !s.decorations.some(d=>d.placed&&d.uid!==uid&&cellAt(d.x,d.y)===cell)&&!animals.some(a=>a.id!==uid&&active(s,a.id)&&cellAt(s.animals[a.id].x,s.animals[a.id].y)===cell);
+}
+function place(s,uid,x,y){check(validPosition(s,x,y,uid),'这里不能摆放，请选择空闲草地格子');const cell=cellAt(x,y),d=typeof uid==='number'?s.decorations.find(d=>d.uid===uid):s.animals[uid];check(d,'物品不存在');Object.assign(d,{x:cell.x,y:cell.y});if(typeof uid==='number')d.placed=true;else d.active=true;}
 function store(s,uid){if(typeof uid==='number'){const d=s.decorations.find(d=>d.uid===uid);check(d,'装饰不存在');d.placed=false;}else{check(s.animals[uid]?.owned,'动物不存在');s.animals[uid].active=false;}}
 function load(raw){try{const s=JSON.parse(raw);check(s?.version===1,'存档版本不支持');const int=n=>Number.isSafeInteger(n)&&n>=0;check(int(s.coins)&&int(s.xp)&&int(s.nextId)&&s.nextId>0,'数值损坏');
  for(const key of ['seeds','harvest'])for(const p of plants)check(int(s[key]?.[p.id]),'库存损坏');
@@ -74,13 +80,14 @@ function load(raw){try{const s=JSON.parse(raw);check(s?.version===1,'存档版�
  for(const a of animals){const v=s.animals?.[a.id];check(v&&typeof v.owned==='boolean'&&typeof v.active==='boolean'&&(!v.active||v.owned)&&Number.isFinite(v.x)&&Number.isFinite(v.y),'动物损坏');}
  check(['land','seed','grow','harvest','warehouse','sell','done'].includes(s.tutorial)&&typeof s.sound==='boolean','引导损坏');
  // Preserve economy and growing plants when upgrading the old two-column garden.
- if(s.layoutVersion!==2){
-  Object.assign(s.animals.capybara,{x:120,y:620});Object.assign(s.animals.panda,{x:630,y:700});
-  for(const d of s.decorations)if(d.placed&&!validPosition(s,d.x,d.y,d.uid)){d.placed=false;for(let y=600;y<=1000&&!d.placed;y+=50)for(let x=100;x<=600&&!d.placed;x+=50)if(validPosition(s,x,y,d.uid))Object.assign(d,{x,y,placed:true});}
-  s.layoutVersion=2;
+ if(s.layoutVersion!==4){
+  const placed=s.decorations.filter(d=>d.placed).map(d=>({item:d,key:d.uid,animal:false})).concat(animals.filter(a=>active(s,a.id)).map(a=>({item:s.animals[a.id],key:a.id,animal:true})));
+  for(const entry of placed)entry.item[entry.animal?'active':'placed']=false;
+  for(const {item,key,animal} of placed){const cell=editCells.filter(c=>validPosition(s,c.x,c.y,key)).sort((a,b)=>Math.hypot(a.x-item.x,a.y-item.y)-Math.hypot(b.x-item.x,b.y-item.y))[0];if(cell)Object.assign(item,{x:cell.x,y:cell.y,[animal?'active':'placed']:true});}
+  s.layoutVersion=4;
  }
  return {state:s,error:null};
  }catch(e){return {state:initial(),error:e.message};}}
-const api={plants,decorations,animals,thresholds,plotPositions,plotHull,plotAt,initial,clone,level,active,growth,price,stage,plant,harvest,buy,sell,total,sellAll,unlock,toggleAnimal,rescue,validPosition,place,store,load};
+const api={plants,decorations,animals,thresholds,plotPositions,plotHull,plotAt,editCells,cellAt,initial,clone,level,active,growth,price,stage,plant,harvest,buy,sell,total,sellAll,unlock,toggleAnimal,rescue,validPosition,place,store,load};
 if(typeof module!=='undefined')module.exports=api;root.Garden=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
