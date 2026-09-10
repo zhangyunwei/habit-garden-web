@@ -97,3 +97,43 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 .level-emblem{overflow:hidden}.level-emblem img{content:url("assets/coral/sprites/plants/daisy/plant_daisy_mature.png");width:42px;height:42px;max-width:none;transform:translateY(-2px);object-fit:contain}
 .plot .plant{left:calc(50% + 5px);bottom:27px;transform:translateX(-50%)}
 @keyframes plantDance{0%,100%{transform:translateX(-50%) rotate(0) scale(1)}50%{transform:translateX(-50%) rotate(3deg) scale(1.03)}}
+
+/* Direct inventory editing panel */
+#game[data-mode="edit"] #tray{display:block;background:#fff5d9;border:2px solid #b19a6b;border-radius:24px 24px 0 0;padding:12px 14px;max-height:44vh;overflow-y:auto;pointer-events:auto}
+#tray .tray-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+#tray .tray-head>div{display:flex;gap:8px}
+#tray .edit-category{display:flex;align-items:center;gap:10px;margin:6px 0}
+#tray .edit-category>b{flex:0 0 30px;font-size:13px;color:#715937}
+#tray .edit-list{display:flex;gap:8px;flex:1;min-width:0;overflow-x:auto;touch-action:none;overscroll-behavior:contain;scrollbar-width:thin;padding:4px 2px}
+#tray .edit-card{flex:0 0 82px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;border:2px solid #dfcba0;border-radius:15px;background:#fffaf0;color:#634f31;touch-action:none;user-select:none}
+#tray .edit-card.selected{border-color:#739b40;background:#edf6cd}
+#tray .edit-card img{width:50px;height:48px;object-fit:contain;pointer-events:none}
+#tray .edit-card b{font-size:12px}#tray .edit-card small{font-size:10px;color:#827354}
+#tray .edit-list p{font-size:12px;color:#827354;margin:12px 0}
+#tray .edit-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:#827354}
+#game[data-mode="edit"] #guide{display:none}
+
+/* Compact edge-to-edge bottom sheet */
+#game[data-mode="edit"] #tray{left:0;right:0;bottom:0;width:100%;margin:0;box-sizing:border-box;transform:none;border-bottom:0;border-left:0;border-right:0;border-radius:20px 20px 0 0;padding:10px 12px calc(8px + env(safe-area-inset-bottom));max-height:32vh}
+#tray .tray-head{margin:0 0 6px;gap:8px}
+#tray .tray-head>button{width:auto;min-width:58px;height:34px;padding:4px 12px;border-radius:18px;font-size:14px;line-height:22px;background:#fffaf0;color:#634f31;border:1px solid #d2bd94;box-shadow:none}
+#tray .tray-head>button[data-action="edit-confirm"]{background:#79a94b;background-image:none;color:#fff;border:1px solid #618d3b;opacity:1}
+#tray .edit-tabs{display:flex;gap:4px;justify-content:center}
+#tray .edit-tabs button{padding:5px 10px;border:0;border-radius:14px;background:transparent;color:#897655;font-size:14px}
+#tray .edit-tabs button[aria-selected="true"]{background:#e6edc9;color:#496b30;font-weight:700}
+#tray .edit-list{min-height:90px}
+#tray .edit-card:disabled{filter:grayscale(1);opacity:.45;cursor:default}
+#animals .animal-wrap.dragging{transition:none;pointer-events:none}
+#animals .animal-wrap.dragging .animal{animation:none}
+
+/* Hit-test the visible animal, which extends outside its anchor wrapper. */
+#world.editing .animal-wrap .animal{pointer-events:auto;touch-action:none;cursor:grab;-webkit-user-drag:none;user-select:none}
+#world.editing .animal-wrap.dragging .animal{pointer-events:none;cursor:grabbing}
+
+#world .object,#world .animal-wrap .animal{pointer-events:auto;touch-action:none;-webkit-user-drag:none;user-select:none}
+#storeBubble{position:absolute;z-index:65;transform:translateX(-50%);border:1px solid #ac9367;border-radius:18px;background:#fff5d9;color:#654d2e;padding:7px 17px;font-weight:700;box-shadow:0 3px 6px #48351b26}
+#storeBubble[hidden]{display:none}.store-flight{position:fixed;z-index:1000;pointer-events:none;object-fit:contain}
+
+#world.editing .animal-wrap.dragging{opacity:0}
+#dragGhost.animal-drag-ghost{z-index:1000;pointer-events:none}
+#dragGhost.animal-drag-ghost img{width:100%;height:100%}
