@@ -43,3 +43,17 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 #seedBubble{position:absolute;z-index:10;width:282px;padding:9px 10px 11px;border:1.5px solid #b59b6d;border-radius:20px;background:#fff8e9f5;box-shadow:0 5px 18px #4a522f35;touch-action:none}
 #seedBubble[hidden]{display:none}#seedBubble:after{content:'';position:absolute;left:var(--arrow,50%);bottom:-7px;width:12px;height:12px;background:#fff8e9;border-right:1.5px solid #b59b6d;border-bottom:1.5px solid #b59b6d;transform:translateX(-50%) rotate(45deg)}
 .bubble-caption{font-size:10px;color:#8a704e;padding:0 2px 6px}.bubble-list{display:flex;gap:8px;overflow-x:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:none}.bubble-list::-webkit-scrollbar{display:none}.bubble-plant{flex:0 0 68px;display:flex;flex-direction:column;align-items:center;padding:3px 0 5px;border-radius:12px;background:#f2ebd3;font-size:11px;touch-action:none}.bubble-plant img{width:54px;height:56px;object-fit:contain;pointer-events:none}.bubble-plant span{font-size:10px;color:#8b714d;margin-top:3px}.bubble-plant[aria-disabled=true]{opacity:.45}.bubble-plant b{font-weight:600}
+
+/* Shared cream navigation panel; shift the complete bottom control group up 20px. */
+#nav,#tray,#guide{translate:0 -20px}
+#nav{background:linear-gradient(110deg,#fff9e7,#f9efd5 55%,#fff8e6);border:1.5px solid #9b8868;border-radius:22px;box-shadow:inset 0 0 0 2px #fffbedb3,0 2px 3px #4d553520;gap:0;align-items:center;pointer-events:auto}
+#nav button{width:33.333%;height:100%;border:0;border-radius:0;background:none;box-shadow:none;gap:0;padding:4px 0;justify-content:center;color:#635036;font-size:14px}
+#nav button+button:before{content:'';position:absolute;left:0;top:18%;bottom:14%;width:1px;background:#e3d1ab}
+#nav button>span{background:none;border:0;border-radius:0;box-shadow:none;padding:0;line-height:1.2;text-shadow:none}
+#nav img{width:43px;height:43px;filter:none}
+#nav button.active{background:#e2eabd80;border-radius:18px}
+#seedBubble.harvest-bubble{width:78px;padding:7px;border-radius:18px}
+.bubble-sickle{display:grid;place-items:center;width:60px;height:60px;padding:3px;touch-action:none}
+.bubble-sickle img{width:54px;height:54px;object-fit:contain;pointer-events:none}
+@media(max-height:700px){#nav img{width:34px;height:34px}#nav button{font-size:12px}}
+@media(min-width:601px) and (pointer:coarse){#nav img{width:54px;height:54px}}
