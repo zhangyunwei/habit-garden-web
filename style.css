@@ -87,7 +87,8 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 .plot.locked{opacity:1;filter:none}
 .plot.locked .soil{opacity:.5}
 .plot.unlockable{opacity:1;filter:none}
-.plot .hint-hand{width:76px;height:76px;object-fit:contain;right:5px;top:12px;z-index:2;pointer-events:none;animation:tutorialTap 1.5s ease-in-out infinite}
+.plot.guide-target{z-index:6}
+.plot .hint-hand{width:76px;height:76px;object-fit:contain;right:5px;top:12px;z-index:3;pointer-events:none;animation:tutorialTap 1.5s ease-in-out infinite}
 @keyframes tutorialTap{0%,100%{transform:translate(6px,6px)}50%{transform:translate(0,0)}}
 #nav button,#nav button:disabled,#nav button img,#nav button>span{opacity:1}
 #nav button>span{background:#fff7df}
@@ -143,10 +144,10 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 
 /* Warehouse and sell tutorial hands */
 .hud .warehouse{overflow:visible}
-.warehouse>.hint-hand{position:absolute;left:-58px;top:10px;width:72px;height:72px;object-fit:contain;z-index:6;pointer-events:none;animation:tutorialTapFlip 1.5s ease-in-out infinite}
+.warehouse>.hint-hand{position:absolute;left:calc(8px - 76px * var(--world-scale,1));top:calc(18px - 38px * var(--world-scale,1));width:calc(76px * var(--world-scale,1));height:calc(76px * var(--world-scale,1));object-fit:contain;z-index:6;pointer-events:none;animation:tutorialTapFlip 1.5s ease-in-out infinite}
 .sell-cta{position:relative;display:flex;flex-direction:column;align-items:stretch}
-.sell-cta .hint-hand{position:absolute;right:-10px;top:18px;width:64px;height:64px;object-fit:contain;z-index:3;pointer-events:none;animation:tutorialTap 1.5s ease-in-out infinite}
-.item-card:has(.hint-hand){overflow:visible;padding-bottom:44px}
+.sell-cta .hint-hand{position:absolute;right:calc(-8px * var(--world-scale,1));top:calc(10px * var(--world-scale,1));width:calc(76px * var(--world-scale,1));height:calc(76px * var(--world-scale,1));object-fit:contain;z-index:3;pointer-events:none;animation:tutorialTap 1.5s ease-in-out infinite}
+.item-card:has(.hint-hand){overflow:visible;padding-bottom:calc(28px * var(--world-scale,1) + 16px)}
 .sell-cta:has(.hint-hand) .primary{box-shadow:0 0 0 3px #f3e08a,0 2px 0 #536f3c}
 @keyframes tutorialTapFlip{0%,100%{transform:scaleX(-1) translate(6px,6px)}50%{transform:scaleX(-1) translate(0,0)}}
 @media(prefers-reduced-motion:reduce){.warehouse>.hint-hand,.sell-cta .hint-hand{animation:none}.warehouse>.hint-hand{transform:scaleX(-1)}}
