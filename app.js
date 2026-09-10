@@ -6,7 +6,43 @@ try{const raw=localStorage.getItem(KEY);if(raw){const loaded=G.load(raw);state=l
 let mode='browse',selectedSeed='daisy',draft=null,selectedObject=null,modalType=null,modalTab='seeds',gesture=null,queuedLevels=[],toastTimer,audioCtx,confirmAction=null,previousFocus=null;
 let seedPlot=null;
 const seedBubble=document.createElement('section');seedBubble.id='seedBubble';seedBubble.hidden=true;seedBubble.setAttribute('aria-label','选择植物播种');$('game').append(seedBubble);
-let camera={x:0,y:0,z:1,base:1,initialized:false},lastAnimalHello=0;
+let camera={x:0,y:0,z:1,base:1,initialized:false},lastAnimalHello=0,talkId=null,talkTimer=null,talkFading=false;
+const talkLines={capybara:'我可以让植物成熟时间减少哦～',panda:'我可以让植物出售价格更高哦～'};
+function hideTalk(fade=true){
+ clearTimeout(talkTimer);talkTimer=null;
+ const bubble=talkId&&$('animals').querySelector(`[data-animal="${talkId}"] .bubble`);
+ const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(!fade||reduce||!bubble||bubble.hidden){if(bubble){bubble.hidden=true;bubble.classList.remove('fade');bubble.style.transform='';}talkId=null;talkFading=false;return;}
+ talkFading=true;bubble.classList.add('fade');
+ const id=talkId,done=()=>{if(talkId!==id)return;bubble.hidden=true;bubble.classList.remove('fade');bubble.style.transform='';talkId=null;talkFading=false;bubble.removeEventListener('transitionend',done);};
+ bubble.addEventListener('transitionend',done);setTimeout(done,800);
+}
+function showTalk(id){
+ if(!talkLines[id]||mode==='edit')return;
+ if(talkId===id){hideTalk(true);return;}
+ hideTalk(false);talkId=id;talkFading=false;
+ document.querySelectorAll('.animal-wrap .bubble').forEach(el=>{if(el.closest('[data-animal]')?.dataset.animal!==id){el.hidden=true;el.textContent='';el.classList.remove('fade');el.style.transform='';}});
+ const bubble=$('animals').querySelector(`[data-animal="${id}"] .bubble`);
+ if(!bubble){talkId=null;return;}
+ bubble.textContent=talkLines[id];bubble.hidden=false;bubble.classList.remove('fade');
+ positionTalk();
+ talkTimer=setTimeout(()=>hideTalk(true),5000);
+}
+function positionTalk(){
+ const wrap=talkId&&$('animals').querySelector(`[data-animal="${talkId}"]`);
+ const img=wrap?.querySelector('.animal'),bubble=wrap?.querySelector('.bubble');
+ if(!img||!bubble||bubble.hidden)return;
+ const scale=camera.scale,world=$('world').getBoundingClientRect(),ir=img.getBoundingClientRect();
+ bubble.style.left=((ir.left+ir.width/2-world.left)/scale-parseFloat(wrap.style.left))+'px';
+ bubble.style.top=((ir.top-world.top)/scale-parseFloat(wrap.style.top))+'px';
+ bubble.style.right='auto';bubble.style.bottom='auto';
+ bubble.style.transform='translate(-50%,calc(-100% - 8px))';
+ const br=bubble.getBoundingClientRect(),g=$('game').getBoundingClientRect();
+ let dx=0;
+ if(br.left<g.left+8)dx=g.left+8-br.left;
+ else if(br.right>g.right-8)dx=g.right-8-br.right;
+ if(dx)bubble.style.transform=`translate(calc(-50% + ${dx/scale}px),calc(-100% - 8px))`;
+}
 const pointers=new Map(),plantImg=(id,stage='mature')=>`assets/coral/sprites/plants/${id}/plant_${id}_${stage}.png`,seedImg=id=>`assets/coral/icons/seeds/icon_seed_${id}.png`,decoImg=id=>`assets/coral/sprites/decorations/decoration_${id}.png`,animalImg=id=>`assets/coral/sprites/animals/animal_${id}_idle.png`;
 const current=()=>draft||state,button=(text,action,cls='primary',disabled=false)=>`<button class="${cls}" data-action="${action}" ${disabled?'disabled':''}>${text}</button>`;
 const hintHand=(flip=false)=>`<img class="hint-hand${flip?' hint-hand-flip':''}" src="assets/coral/icons/core/icon_tutorial_hand.png" alt="" draggable="false">`;
@@ -24,8 +60,8 @@ function sound(kind='tap'){if(!state.sound)return;try{audioCtx??=new(window.Audi
 function save(){if(G.rescue(state))toast('获得 2 颗应急雏菊种子，继续经营花园吧');try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true;}catch(e){storageOK=false;toast('当前浏览器无法保存，请在设置中导出存档');}}
 function run(fn){try{const result=fn();save();render();return result;}catch(e){toast(e.message);return null;}}
 function tutorialAllowed(action){if(state.tutorial==='done')return true;if(['warehouse','sell'].includes(state.tutorial)&&action==='warehouse')return true;toast('先跟着下方提示，完成第一次种植、收获和出售吧');return false;}
-function setMode(next){closeSeeds();if(gesture)endGesture();mode=next;selectedObject=null;render();requestAnimationFrame(()=>resizeCamera(false));}
-function header(){const s=current(),l=G.level(s),start=G.thresholds[l-1],end=G.thresholds[l];$('level').textContent=l;$('coins').textContent=s.coins;$('xpText').textContent=l===5?'已达最高等级':`${s.xp-start}/${end-start}`;$('xpBar').style.width=(l===5?100:(s.xp-start)/(end-start)*100)+'%';const stock=Object.values(s.harvest).reduce((a,b)=>a+b,0);$('warehouseBadge').textContent=stock||'';$('shopDot').style.display=s.newUnlock?'block':'none';html($('buffs'),G.animals.filter(a=>G.active(s,a.id)).map(a=>`<span>${a.name} · ${a.skill}</span>`).join(''));
+function setMode(next){hideTalk(false);closeSeeds();if(gesture)endGesture();mode=next;selectedObject=null;render();requestAnimationFrame(()=>resizeCamera(false));}
+function header(){const s=current(),l=G.level(s),start=G.thresholds[l-1],end=G.thresholds[l];$('level').textContent=l;$('coins').textContent=s.coins;$('xpText').textContent=l===5?'已达最高等级':`${s.xp-start}/${end-start}`;$('xpBar').style.width=(l===5?100:(s.xp-start)/(end-start)*100)+'%';const stock=Object.values(s.harvest).reduce((a,b)=>a+b,0);$('warehouseBadge').textContent=stock||'';$('shopDot').style.display=s.newUnlock?'block':'none';html($('buffs'),'');
  const guided=state.tutorial!=='done';for(const id of ['shop','edit','settings','levelButton'])$(id).disabled=guided||mode==='edit'; $('warehouse').disabled=(guided&&!['warehouse','sell'].includes(state.tutorial))||mode==='edit';$('warehouse').classList.toggle('guide-glow',['warehouse','sell'].includes(state.tutorial));
  syncWarehouseHand();
  for(const [id,m] of [['edit','edit']])$(id).classList.toggle('active',mode===m);
@@ -38,7 +74,8 @@ function renderPlots(){const s=current();s.plots.forEach((plot,i)=>{let el=$('pl
  html(el,`<img class="soil" src="assets/coral/sprites/plots/plot_${plot.open?'empty':locked?'locked':'unlockable'}.png" alt="">${plot.plant?`<img class="plant" src="${plantImg(plot.plant.id,st.stage)}" alt="">`:''}${!plot.open?`<span class="plot-lock-group"><img class="plot-lock" src="assets/coral/icons/core/icon_lock.png" alt="">${!locked?'<span class="plot-unlock-label">可解锁</span>':''}</span>`:''}${guided?'<img class="hint-hand" src="assets/coral/icons/core/icon_tutorial_hand.png" alt="">':''}`);
  });}
 function renderObjects(){const s=current();$('world').classList.toggle('editing',mode==='edit');html($('objects'),s.decorations.filter(d=>d.placed).map(d=>`<img class="object ${selectedObject===d.uid?'selected':''}" data-object="${d.uid}" style="left:${d.x}px;top:${d.y}px" src="${decoImg(d.id)}" alt="${G.decorations.find(x=>x.id===d.id).name}">`).join(''));
- html($('animals'),G.animals.filter(a=>G.active(s,a.id)).map(a=>{const d=s.animals[a.id];return `<div class="animal-wrap ${selectedObject===a.id?'selected':''}" data-animal="${a.id}" style="left:${d.x}px;top:${d.y}px"><img class="animal" src="${animalImg(a.id)}" alt="${a.name}"><span class="bubble" hidden></span></div>`;}).join(''));
+ html($('animals'),G.animals.filter(a=>G.active(s,a.id)).map(a=>{const d=s.animals[a.id],open=talkId===a.id;return `<div class="animal-wrap ${selectedObject===a.id?'selected':''}" data-animal="${a.id}" style="left:${d.x}px;top:${d.y}px"><img class="animal" src="${animalImg(a.id)}" alt="${a.name}"><span class="bubble${open&&talkFading?' fade':''}" ${open?'':'hidden'}>${open?talkLines[a.id]:''}</span></div>`;}).join(''));
+ if(talkId&&!G.active(s,talkId))hideTalk(false);else if(talkId)positionTalk();
  if(mode==='edit'){let cells='';for(let y=600;y<=1000;y+=50)for(let x=100;x<=650;x+=50)if(G.validPosition(s,x,y,selectedObject))cells+=`<i class="grid-cell" style="left:${x}px;top:${y}px"></i>`;html($('editGrid'),cells);}
 }
 function guide(){const t=state.tutorial;let text='';if(t==='land')text='<span class="step">第一次种植 · 1/3</span><b>点击发光的第一块土地</b>，种下一颗小雏菊。';if(t==='seed')text='<span class="step">第一次种植 · 1/3</span><b>点击气泡里的雏菊，或拖到发光的土地</b>。横滑查看植物，拖出气泡可连续播种。';if(t==='grow')text='<span class="step">等待花开</span>第一株只需 <b>3 秒</b>！还可以继续拖过空土地播种。';if(t==='harvest')text='<span class="step">第一次收获 · 2/3</span><b>点击成熟的雏菊</b>，点击气泡里的镰刀收获，或拖过成熟植物连续收获。';if(t==='warehouse')text='<span class="step">第一次出售 · 3/3</span><b>点击右上角仓库</b>，把手里的收获换成金币。';if(t==='sell')text='<span class="step">第一次出售 · 3/3</span><b>点击「确认出售」</b>，把雏菊换成金币，第一次经营就完成啦。';if(t==='done'){const l=G.level(state);text=mode==='edit'?'选择装饰或动物后拖到草地，也可点击空闲网格放置。':l<5?`<b>慢慢来，花会开的。</b> 再收获 ${Math.max(0,G.thresholds[l]-state.xp)} 经验，解锁 ${G.plants[l].name}。`:'<b>你的花园已经 5 级啦！</b> 继续种植，和伙伴一起装扮这片小天地。';}html($('guide'),text);}
@@ -48,7 +85,7 @@ function renderTray(){let content='';
 }
 function render(){$('game').dataset.mode=mode;header();renderPlots();renderObjects();renderTray();guide();}
 function resizeCamera(center=false){const r=$('viewport').getBoundingClientRect(),old=camera.base;camera.base=Math.max(r.width/750,r.height/1500);if(!camera.initialized||center){camera.z=1;camera.x=(r.width-750*camera.base)/2;camera.y=r.height*.48-740*camera.base;camera.initialized=true;}else{const cx=(r.width/2-camera.x)/(old*camera.z),cy=(r.height/2-camera.y)/(old*camera.z);camera.x=r.width/2-cx*camera.base*camera.z;camera.y=r.height/2-cy*camera.base*camera.z;}applyCamera();}
-function applyCamera(){const r=$('viewport').getBoundingClientRect();camera.z=Math.max(.8,Math.min(1.8,camera.z));const minScale=Math.max(r.width/750,r.height/1500),scale=Math.max(camera.base*camera.z,minScale);camera.x=Math.min(0,Math.max(r.width-750*scale,camera.x));camera.y=Math.min(0,Math.max(r.height-1500*scale,camera.y));camera.scale=scale;$('world').style.transform=`translate(${camera.x}px,${camera.y}px) scale(${scale})`;positionSeeds();}
+function applyCamera(){const r=$('viewport').getBoundingClientRect();camera.z=Math.max(.8,Math.min(1.8,camera.z));const minScale=Math.max(r.width/750,r.height/1500),scale=Math.max(camera.base*camera.z,minScale);camera.x=Math.min(0,Math.max(r.width-750*scale,camera.x));camera.y=Math.min(0,Math.max(r.height-1500*scale,camera.y));camera.scale=scale;$('world').style.transform=`translate(${camera.x}px,${camera.y}px) scale(${scale})`;positionSeeds();positionTalk();}
 function zoom(d){if(mode!=='browse'||modalType)return;const r=$('viewport').getBoundingClientRect(),x=(r.width/2-camera.x)/camera.scale,y=(r.height/2-camera.y)/camera.scale;camera.z=Math.min(1.3,Math.max(.8,camera.z+d));const scale=Math.max(camera.base*camera.z,r.width/750,r.height/1500);camera.x=r.width/2-x*scale;camera.y=r.height/2-y*scale;applyCamera();}
 function mapPoint(e){const r=$('viewport').getBoundingClientRect();return{x:(e.clientX-r.left-camera.x)/camera.scale,y:(e.clientY-r.top-camera.y)/camera.scale};}
 function fly(i,id,xp){const a=$('plot'+i).getBoundingClientRect(),b=$('warehouse').getBoundingClientRect(),g=$('game').getBoundingClientRect();const img=document.createElement('img');img.src=asset(plantImg(id));img.className='fly';img.style.left=a.left+a.width/2-g.left+'px';img.style.top=a.top-g.top+'px';img.style.setProperty('--dx',b.left-a.left-a.width/2+'px');img.style.setProperty('--dy',b.top-a.top+'px');$('fx').append(img);setTimeout(()=>img.remove(),700);const star=document.createElement('img');star.src=asset('assets/coral/icons/core/icon_exp.png');star.className='fly';const l=$('level').getBoundingClientRect();star.style.left=img.style.left;star.style.top=img.style.top;star.style.setProperty('--dx',l.left-a.left-a.width/2+'px');star.style.setProperty('--dy',l.top-a.top+'px');$('fx').append(star);setTimeout(()=>star.remove(),700);const txt=document.createElement('span');txt.className='float-text';txt.textContent='+'+xp+' 经验';txt.style.left=img.style.left;txt.style.top=img.style.top;$('fx').append(txt);setTimeout(()=>txt.remove(),1000);$('warehouse').animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:400});}
@@ -81,7 +118,7 @@ function renderModal(){const type=modalType,tab=modalTab,s=current();let title='
  if(type==='settings'){title='花园设置';sub='你的花园会记住每一次播种与花开。';content=`<div class="setting-row"><span>轻柔的操作音效</span>${button(state.sound?'已开启':'已关闭','sound','secondary')}</div><div class="setting-row"><span>本地存档</span><b>${storageOK?'自动保存已开启':'当前无法写入'}</b></div><p class="sheet-sub" style="margin:12px 0">进度保存在当前浏览器。离开后植物继续生长，不会枯萎。更换浏览器前，可以导出存档再导入。</p><div class="setting-row">${button('导出存档','export','secondary')}${button('导入存档','import','secondary')}<input id="importFile" type="file" accept=".json" hidden></div><div class="setting-row"><span>重新体验第一天</span>${button('重置游戏进度','reset','danger')}</div><p class="sheet-sub" style="margin:14px 0">玩法：点击土地选择种子，按住拖过多块土地连续播种。成熟后用同样方式收获，到仓库出售。鼠标滚轮或双指缩放地图。编辑时点击物品，再拖动或点击草地放置。</p>`;}
  html($('modal'),`<section class="sheet" role="dialog" aria-modal="true" aria-label="${title}"><div class="sheet-head"><h2>${title}</h2>${s.tutorial==='sell'?'':`<button data-action="close-modal" aria-label="关闭">×</button>`}</div><p class="sheet-sub">${sub}</p>${tabs}<div class="sheet-content">${content}</div>${footer?`<div class="sheet-footer">${footer}</div>`:''}</section>`);
 }
-function startEdit(){draft=G.clone(state);mode='edit';selectedObject=null;render();requestAnimationFrame(()=>resizeCamera(false));}
+function startEdit(){hideTalk(false);draft=G.clone(state);mode='edit';selectedObject=null;render();requestAnimationFrame(()=>resizeCamera(false));}
 function placeSelected(x,y){if(selectedObject===null)return;try{G.place(draft,selectedObject,x,y);sound();renderObjects();renderTray();header();}catch(e){toast(e.message);}}
 function updateQty(id,value){const input=$('modal').querySelector(`[data-qty="${id}"]`),max=state.harvest[id];if(!input)return;const n=Math.max(max?1:0,Math.min(max,Math.floor(Number(value)||0)));input.value=n;$('modal').querySelector(`[data-total="${id}"]`).textContent=(n*G.price(state,id))+' 金币';}
 function action(value){const [a,id,key,count]=value.split(':');
@@ -115,6 +152,7 @@ document.addEventListener('pointerdown',e=>{
  const seed=e.target.closest('[data-seed]'),tool=e.target.closest('[data-harvest-tool]');if(seed&&seed.closest('#seedBubble')){e.preventDefault();gesture={type:'seed-pending',seed:seed.dataset.seed,disabled:seed.getAttribute('aria-disabled')==='true',target:seedPlot,id:e.pointerId,startX:e.clientX,startY:e.clientY,scroll:seedBubble.querySelector('.bubble-list').scrollLeft};return;}if(tool){e.preventDefault();gesture={type:'harvest-pending',target:seedPlot,id:e.pointerId,startX:e.clientX,startY:e.clientY};return;}
  if(!e.target.closest('#viewport')||e.target.closest('.map-tools'))return;closeSeeds();e.preventDefault();pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(mode==='browse'&&pointers.size===2){const ps=[...pointers.values()];const r=$('viewport').getBoundingClientRect(),cx=(ps[0].x+ps[1].x)/2-r.left,cy=(ps[0].y+ps[1].y)/2-r.top;gesture={type:'pinch',distance:Math.max(1,Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y)),scale:camera.scale,anchorX:(cx-camera.x)/camera.scale,anchorY:(cy-camera.y)/camera.scale};return;}
+ if(mode==='browse'){const bubble=e.target.closest('.animal-wrap .bubble');if(bubble){e.preventDefault();gesture={type:'talk-hide',id:e.pointerId};return;}const animal=e.target.closest('[data-animal]');if(animal){e.preventDefault();gesture={type:'talk',key:animal.dataset.animal,id:e.pointerId,startX:e.clientX,startY:e.clientY,x:camera.x,y:camera.y,moved:false};return;}}
  if(mode==='edit'){const d=e.target.closest('[data-object]'),a=e.target.closest('[data-animal]');if(d||a){selectedObject=d?Number(d.dataset.object):a.dataset.animal;gesture={type:'edit',id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false};renderObjects();renderTray();}else gesture={type:'edit-place',id:e.pointerId};return;}
  const point=mapPoint(e),index=G.plotAt(point.x,point.y),plot=index<0?null:$('plot'+index);
  if(mode==='harvest'&&plot&&G.stage(state.plots[Number(plot.dataset.plot)].plant)?.remaining===0){gesture={type:'harvest',visited:new Set(),id:e.pointerId};toolAt(e);return;}
@@ -132,10 +170,11 @@ document.addEventListener('pointermove',e=>{if(!gesture)return;if(pointers.has(e
   selectedSeed=gesture.seed;gesture={type:'plant',visited:new Set(),id:e.pointerId};mode='plant';closeSeeds();render();
  }
  if(['plant','harvest'].includes(gesture.type)){ghost(e,gesture.type==='plant'?seedImg(selectedSeed):'assets/coral/icons/core/icon_sickle.png');toolAt(e);return;}
+ if(gesture.type==='talk'){const dx=e.clientX-gesture.startX,dy=e.clientY-gesture.startY;if(Math.hypot(dx,dy)>6){gesture.type='pan';gesture.moved=true;camera.x=gesture.x+dx;camera.y=gesture.y+dy;applyCamera();}return;}
  if(gesture.type==='pan'){const dx=e.clientX-gesture.startX,dy=e.clientY-gesture.startY;if(Math.hypot(dx,dy)>6)gesture.moved=true;camera.x=gesture.x+dx;camera.y=gesture.y+dy;applyCamera();}
  if(gesture.type==='edit'){gesture.moved=Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>5;const p=mapPoint(e),x=Math.round(p.x/50)*50,y=Math.round(p.y/50)*50;const src=typeof selectedObject==='number'?decoImg(draft.decorations.find(d=>d.uid===selectedObject).id):animalImg(selectedObject);ghost(e,src);$('dragGhost').style.filter=G.validPosition(draft,x,y,selectedObject)?'drop-shadow(0 0 6px #a2ef54)':'drop-shadow(0 0 6px #ee5d4a)';}
 });
-document.addEventListener('pointerup',e=>{if(!gesture)return;if(gesture.type==='pinch'){endGesture();return;}if(e.pointerId!==gesture.id)return;const g=gesture;gesture=null;pointers.clear();if(g.type==='seed-pending'&&!g.disabled){selectedSeed=g.seed;closeSeeds();doPlant(g.target);mode='browse';render();}if(g.type==='harvest-pending'){closeSeeds();doHarvest(g.target);}if(['plant','harvest','harvest-pending'].includes(g.type)){mode='browse';render();}$('dragGhost').style.display='none';$('dragGhost').style.filter='';if((g.type==='pan'||g.type==='tap')&&!g.moved&&g.plot!==null)plotClick(g.plot);if((g.type==='edit'&&g.moved)||g.type==='edit-place'){const p=mapPoint(e);placeSelected(p.x,p.y);}if(state.tutorial==='harvest'&&mode==='plant')setMode('browse');setTimeout(levelPopup,750);});
+document.addEventListener('pointerup',e=>{if(!gesture)return;if(gesture.type==='pinch'){endGesture();return;}if(e.pointerId!==gesture.id)return;const g=gesture;gesture=null;pointers.clear();if(g.type==='seed-pending'&&!g.disabled){selectedSeed=g.seed;closeSeeds();doPlant(g.target);mode='browse';render();}if(g.type==='harvest-pending'){closeSeeds();doHarvest(g.target);}if(['plant','harvest','harvest-pending'].includes(g.type)){mode='browse';render();}$('dragGhost').style.display='none';$('dragGhost').style.filter='';if(g.type==='talk-hide')hideTalk(true);if(g.type==='talk'&&!g.moved)showTalk(g.key);if((g.type==='pan'||g.type==='tap')&&!g.moved&&g.plot!==null)plotClick(g.plot);if((g.type==='edit'&&g.moved)||g.type==='edit-place'){const p=mapPoint(e);placeSelected(p.x,p.y);}if(state.tutorial==='harvest'&&mode==='plant')setMode('browse');setTimeout(levelPopup,750);});
 document.addEventListener('pointercancel',endGesture);window.addEventListener('blur',endGesture);$('viewport').addEventListener('wheel',e=>{if(mode==='browse'&&!modalType){e.preventDefault();zoom(e.deltaY>0?-.06:.06);}},{passive:false});
 $('plots').addEventListener('click',e=>{if(e.detail===0){const p=e.target.closest('[data-plot]');if(p)plotClick(Number(p.dataset.plot));}});
 $('tray').addEventListener('click',e=>{if(e.detail===0&&e.target.closest('[data-seed]')){selectedSeed=e.target.closest('[data-seed]').dataset.seed;renderTray();}});
@@ -146,7 +185,7 @@ new ResizeObserver(()=>{
  if(tray.offsetHeight&&camera.initialized){const r=$('viewport').getBoundingClientRect();camera.y=Math.min(camera.y,tray.getBoundingClientRect().top-r.top-40-1040*camera.scale);applyCamera();}
 }).observe($('tray'));
 setInterval(()=>{if(state.tutorial==='grow'&&state.plots[0].plant&&G.stage(state.plots[0].plant).remaining===0){state.tutorial='harvest';save();if(mode==='plant'&&!gesture)setMode('browse');guide();}renderPlots();
- if(mode!=='edit'&&G.animals.every(a=>G.active(state,a.id))){const a=state.animals.capybara,b=state.animals.panda,near=Math.hypot(a.x-b.x,a.y-b.y)<200;if(near&&Date.now()-lastAnimalHello>18000){lastAnimalHello=Date.now();document.querySelectorAll('.bubble').forEach(el=>{el.textContent='你好呀 ♡';el.hidden=false;});setTimeout(()=>document.querySelectorAll('.bubble').forEach(el=>el.hidden=true),3500);}}
+ if(mode!=='edit'&&!talkId&&G.animals.every(a=>G.active(state,a.id))){const a=state.animals.capybara,b=state.animals.panda,near=Math.hypot(a.x-b.x,a.y-b.y)<200;if(near&&Date.now()-lastAnimalHello>18000){lastAnimalHello=Date.now();document.querySelectorAll('.animal-wrap .bubble').forEach(el=>{el.textContent='你好呀 ♡';el.hidden=false;el.classList.remove('fade');});setTimeout(()=>document.querySelectorAll('.animal-wrap .bubble').forEach(el=>{if(!talkId){el.hidden=true;el.textContent='';}}),3500);}}
 },250);
 window.addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
 render();resizeCamera(true);if(state.tutorial==='seed')openSeeds(0);if(storageError)setTimeout(()=>toast('原存档损坏，已恢复初始花园'),300);else if(!storageOK)setTimeout(()=>toast('浏览器存储不可用，可在设置中导出存档'),300);else if(state.tutorial==='done'&&state.plots.some(p=>p.plant&&G.stage(p.plant).remaining===0))setTimeout(()=>toast('欢迎回来，你的植物已经成熟啦！'),400);

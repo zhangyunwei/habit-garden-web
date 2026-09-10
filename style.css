@@ -107,3 +107,10 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 .sell-cta:has(.hint-hand) .primary{box-shadow:0 0 0 3px #f3e08a,0 2px 0 #536f3c}
 @keyframes tutorialTapFlip{0%,100%{transform:scaleX(-1) translate(6px,6px)}50%{transform:scaleX(-1) translate(0,0)}}
 @media(prefers-reduced-motion:reduce){.warehouse>.hint-hand,.sell-cta .hint-hand{animation:none}.warehouse>.hint-hand{transform:scaleX(-1)}}
+
+#buffs{display:none}
+#world:not(.editing) .animal-wrap .animal,#world:not(.editing) .animal-wrap .bubble{pointer-events:auto;cursor:pointer;touch-action:none}
+.animal-wrap .bubble{left:0;right:auto;top:calc(-0.8 * 152px);bottom:auto;transform:translate(-50%,calc(-100% - 8px));width:max-content;max-width:240px;white-space:normal;text-align:center;font-size:20px;line-height:1.4;padding:10px 14px;opacity:1;transition:opacity .6s ease;z-index:6}
+.animal-wrap .bubble[hidden]{display:none}
+.animal-wrap .bubble.fade{opacity:0}
+@media(prefers-reduced-motion:reduce){.animal-wrap .bubble{transition:none}}
