@@ -14,3 +14,17 @@ function setup(){
 test('tap sickle harvests selected plot only and dismisses bubble',()=>{const {ctx,handlers,harvests,event}=setup();handlers.pointerdown(event(250,40,true));assert.deepEqual(harvests,[]);handlers.pointerup(event(250,40,true));assert.deepEqual(harvests,[2]);assert.equal(ctx.closed,true);assert.equal(ctx.mode,'browse');});
 test('drag dismisses bubble, skips immature/empty plots, and never harvests twice',()=>{const {ctx,handlers,harvests,event}=setup();handlers.pointerdown(event(250,40,true));for(const x of [255,150,50,250,50,350])handlers.pointermove(event(x,100));handlers.pointerup(event(350,100));assert.deepEqual(harvests,[2,0]);assert.equal(ctx.closed,true);assert.equal(ctx.state.plots[1].plant.remaining,3);assert.equal(ctx.mode,'browse');});
 test('cancel before drag does not harvest; cancel during drag clears tool mode',()=>{const {ctx,handlers,harvests,event}=setup();handlers.pointerdown(event(250,40,true));ctx.endGesture();assert.deepEqual(harvests,[]);ctx.seedPlot=2;handlers.pointerdown(event(250,40,true));handlers.pointermove(event(150,100));ctx.endGesture();assert.equal(ctx.mode,'browse');assert.equal(ctx.gesture,null);assert.deepEqual(harvests,[]);});
+
+test('two fingers zoom around their midpoint and release without clicking land',()=>{
+ const {ctx,handlers,event}=setup();
+ ctx.camera={x:0,y:0,scale:1,base:1,z:1};
+ ctx.$=id=>id==='viewport'?{getBoundingClientRect:()=>({left:0,top:0,width:500,height:500})}:id==='confirm'?{hidden:true}:id==='dragGhost'?{style:{}}:{};
+ ctx.G.plotAt=()=>-1;let clicks=0;ctx.plotClick=()=>clicks++;
+ function touch(x,y,id){const e=event(x,y);e.pointerId=id;e.target.closest=q=>q==='#game'||q==='#viewport'?{}:null;return e;}
+ handlers.pointerdown(touch(100,200,1));handlers.pointerdown(touch(300,200,2));
+ assert.equal(ctx.gesture.type,'pinch');
+ handlers.pointermove(touch(400,200,2));
+ assert.equal(ctx.camera.z,1.5);assert.equal(ctx.camera.x,-50);assert.equal(ctx.camera.y,-100);
+ handlers.pointermove(touch(900,200,2));assert.equal(ctx.camera.z,1.8);
+ handlers.pointerup(touch(100,200,1));handlers.pointerup(touch(900,200,2));assert.equal(clicks,0);assert.equal(ctx.gesture,null);
+});
