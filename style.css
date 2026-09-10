@@ -137,3 +137,6 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 #world.editing .animal-wrap.dragging{opacity:0}
 #dragGhost.animal-drag-ghost{z-index:1000;pointer-events:none}
 #dragGhost.animal-drag-ghost img{width:100%;height:100%}
+
+.grid-cell{width:166px;height:104px;box-sizing:border-box;border:0;border-radius:0;clip-path:polygon(45.78% 8.65%,98.19% 40.38%,54.22% 95.19%,1.81% 63.46%);background:#edffc34d;outline:0;pointer-events:none}
+.grid-cell.occupied{background:#dce6a322}
