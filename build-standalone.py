@@ -7,8 +7,8 @@ html=(root/'index.html').read_text()
 html=re.sub(r'src="(assets/[^\"]+)"',lambda m:'src="'+assets[m[1]]+'"',html)
 html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+(root/'style.css').read_text()+'</style>')
 scripts='<script>window.GARDEN_ASSETS='+json.dumps(assets,separators=(',',':'))+';</script>'
-for name in ['model.js','app.js']:
+for name in ['model.js','app.js','environment.js']:
  scripts+='<script>'+(root/name).read_text().replace('</script','<\\/script')+'</script>'
-html=html.replace('<script src="model.js"></script><script src="app.js"></script>',scripts)
+html=html.replace('<script src="model.js"></script><script src="app.js"></script><script src="environment.js"></script>',scripts)
 out=root/'习惯花园-双击即玩.html';out.write_text(html)
 print(f'Built {out.name}: {out.stat().st_size/1024/1024:.1f} MB; {len(assets)} embedded images')

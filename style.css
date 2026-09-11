@@ -158,3 +158,28 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 .animal-wrap .bubble[hidden]{display:none}
 .animal-wrap .bubble.fade{opacity:0}
 @media(prefers-reduced-motion:reduce){.animal-wrap .bubble{transition:none}}
+
+/* Atmosphere stays inside the map; controls retain their original contrast. */
+#world{isolation:isolate}
+.environment-tint,.environment-color,.environment-lights{position:absolute;inset:0;pointer-events:none;z-index:20}
+.environment-tint{mix-blend-mode:multiply}
+.environment-color{mix-blend-mode:soft-light}
+.environment-lights{z-index:21;opacity:0}
+.environment-lights svg{width:100%;height:100%;display:block}
+.environment-rain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.environment-badge{position:absolute;left:0;top:46px;z-index:4;pointer-events:none;white-space:nowrap;border:1px solid #cdbd96cc;border-radius:20px;padding:5px 10px;color:#546e38;background:#fff8e8f2;font-size:12px;line-height:18px;letter-spacing:.5px;box-shadow:0 2px 8px #34482718;transition:background 1s,color 1s,border-color 1s}
+.environment-badge[data-phase="黄昏"]{color:#9a430b;background:#ffedc9f5;border-color:#e8ae5b}
+.environment-badge[data-phase="夜晚"]{color:#f6e7bc;background:#344274ed;border-color:#8994c6}
+.environment-badge[data-phase="天亮"]{color:#765777;background:#fff0e8f2;border-color:#c7acc7}
+.environment-badge[data-rain="true"]{border-color:#82afc5}
+
+#game[data-mode="edit"] .environment-badge{visibility:hidden}
+.lamp-light{position:absolute;width:80px;height:90px;border-radius:50%;background:radial-gradient(ellipse,#ffe9a4b3 0%,#ffd17455 22%,transparent 68%);transform:translate(-50%,-100%);pointer-events:none;z-index:21;opacity:var(--night-light,0)}
+
+/* Background keeps the full atmosphere; gameplay sprites get a gentler exposure. */
+.environment-scenery{position:absolute;inset:0;isolation:isolate;pointer-events:none}
+#plots,#objects,#animals{filter:url(#spriteAtmosphere)}
+
+/* Broad moon wash and pond reflection fade with night; rain clouds soften them. */
+.environment-moonlight{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 55% 28% at 86% 4%,#b4d6ff36,transparent 85%),linear-gradient(128deg,transparent 27%,#a3caff0d 39%,#c0dfff17 45%,transparent 60%),radial-gradient(ellipse 26% 12% at 78% 94%,#c5e1ff26,transparent 80%)}
+.plot .soil{filter:saturate(var(--soil-saturation,1)) brightness(var(--soil-brightness,1))}
