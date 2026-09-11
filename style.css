@@ -178,10 +178,14 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 
 /* Background keeps the full atmosphere; gameplay sprites get a gentler exposure. */
 .environment-scenery{position:absolute;inset:0;isolation:isolate;pointer-events:none}
-#plots,#objects,#animals{filter:url(#spriteAtmosphere)}
+#objects,#animals{filter:url(#spriteAtmosphere)}
+#plots{filter:none}
 
 /* Broad moon wash and pond reflection fade with night; rain clouds soften them. */
 .environment-moonlight{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 55% 28% at 86% 4%,#b4d6ff36,transparent 85%),linear-gradient(128deg,transparent 27%,#a3caff0d 39%,#c0dfff17 45%,transparent 60%),radial-gradient(ellipse 26% 12% at 78% 94%,#c5e1ff26,transparent 80%)}
-.plot .soil{filter:saturate(var(--soil-saturation,1)) brightness(var(--soil-brightness,1))}
+.plot .soil{filter:url(#spriteAtmosphere) saturate(var(--soil-saturation,1)) brightness(var(--soil-brightness,1))}
+.plot .plant{filter:url(#spriteAtmosphere) drop-shadow(0 3px 1px #61401f1c)}
 .plot.valid{filter:none}
+@keyframes plantDance{0%,100%{transform:translateX(-50%) rotate(0)}50%{transform:translateX(-50%) rotate(3deg)}}
+.plot.ready .plant{animation:plantDance 2s infinite}
 .audio-volume-row{gap:10px}.audio-volume-row input{flex:1;min-width:50px;max-width:150px;accent-color:#78934b}.audio-volume-row output{min-width:36px;text-align:right;font-size:12px}
