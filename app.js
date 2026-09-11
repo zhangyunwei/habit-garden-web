@@ -68,7 +68,7 @@ function header(){const s=current(),l=G.level(s),start=G.thresholds[l-1],end=G.t
  $('modeLabel').textContent={browse:'自由浏览 · 拖动探索花园',plant:'播种中 · 拖过空土地连续播种',harvest:'收获中 · 拖过成熟植物连续收获',edit:'编辑中 · 仅亮起的草地区域可摆放'}[mode];
 }
 function renderPlots(){const s=current();s.plots.forEach((plot,i)=>{let el=$('plot'+i);if(!el){el=document.createElement('button');el.id='plot'+i;el.className='plot';el.dataset.plot=i;const p=G.plotPositions[i];el.style.left=p.x+'px';el.style.top=p.y+'px';$('plots').append(el);}const st=G.stage(plot.plant),locked=!plot.open&&G.level(s)<i-2,ready=st?.remaining===0;const guided=(state.tutorial==='land'||state.tutorial==='seed'||state.tutorial==='harvest')&&i===0;
- el.className=`plot ${locked?'locked':!plot.open?'unlockable':''} ${ready?'ready':''} ${guided?'guide-target':''} ${(mode==='plant'&&plot.open&&!plot.plant)||(mode==='harvest'&&ready)?'valid':''}`;
+ el.className=`plot ${locked?'locked':!plot.open?'unlockable':''} ${ready?'ready':''} ${guided?'guide-target':''}`;
  const label=!plot.open?(locked?`🔒 ${i-2} 级解锁`:`开垦 ${[15,20,30,40][i-4]}`):!plot.plant?(mode==='plant'?'点此播种':'＋ 播种'):ready?'收获':`${st.remaining} 秒`;
  el.setAttribute('aria-label',`第 ${i+1} 块土地，${plot.plant?G.plants.find(p=>p.id===plot.plant.id).name+'，':''}${label}`);
  html(el,`<img class="soil" src="assets/coral/sprites/plots/plot_${plot.open?'empty':locked?'locked':'unlockable'}.png" alt="">${plot.plant?`<img class="plant" src="${plantImg(plot.plant.id,st.stage)}" alt="">`:''}${!plot.open?`<span class="plot-lock-group"><img class="plot-lock" src="assets/coral/icons/core/icon_lock.png" alt="">${!locked?'<span class="plot-unlock-label">可解锁</span>':''}</span>`:''}${guided?'<img class="hint-hand" src="assets/coral/icons/core/icon_tutorial_hand.png" alt="">':''}`);

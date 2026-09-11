@@ -97,7 +97,7 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 .hud .warehouse{position:absolute;right:0}
 .level-emblem{overflow:hidden}.level-emblem img{content:url("assets/coral/sprites/plants/daisy/plant_daisy_mature.png");width:42px;height:42px;max-width:none;transform:translateY(-2px);object-fit:contain}
 .plot .plant{left:calc(50% + 5px);bottom:27px;transform:translateX(-50%)}
-@keyframes plantDance{0%,100%{transform:translateX(-50%) rotate(0) scale(1)}50%{transform:translateX(-50%) rotate(3deg) scale(1.03)}}
+@keyframes plantDance{0%,100%{transform:translateX(-50%) rotate(0)}50%{transform:translateX(-50%) rotate(3deg)}}
 
 /* Direct inventory editing panel */
 #game[data-mode="edit"] #tray{display:block;background:#fff5d9;border:2px solid #b19a6b;border-radius:24px 24px 0 0;padding:12px 14px;max-height:44vh;overflow-y:auto;pointer-events:auto}
@@ -183,3 +183,4 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 /* Broad moon wash and pond reflection fade with night; rain clouds soften them. */
 .environment-moonlight{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 55% 28% at 86% 4%,#b4d6ff36,transparent 85%),linear-gradient(128deg,transparent 27%,#a3caff0d 39%,#c0dfff17 45%,transparent 60%),radial-gradient(ellipse 26% 12% at 78% 94%,#c5e1ff26,transparent 80%)}
 .plot .soil{filter:saturate(var(--soil-saturation,1)) brightness(var(--soil-brightness,1))}
+.plot.valid{filter:none}
