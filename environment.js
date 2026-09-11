@@ -35,19 +35,36 @@
  const spriteMatrix=lights.querySelector('#spriteColorMatrix');
  const moonlight=document.createElement('div');moonlight.className='environment-moonlight';moonlight.setAttribute('aria-hidden','true');world.append(moonlight);
  const rain=document.createElement('canvas');rain.className='environment-rain';rain.setAttribute('aria-hidden','true');viewport.append(rain);
+ const fireflyCanvas=document.createElement('canvas');fireflyCanvas.className='environment-fireflies';fireflyCanvas.setAttribute('aria-hidden','true');viewport.append(fireflyCanvas);
  const badge=document.createElement('span');badge.className='environment-badge';const hud=document.querySelector('.hud');hud.append(badge);
  function positionBadge(){const level=document.getElementById('levelButton').getBoundingClientRect(),hr=hud.getBoundingClientRect();badge.style.left=(level.left-hr.left)+'px';badge.style.top=(level.bottom-hr.top+8)+'px';}
  new ResizeObserver(positionBadge).observe(hud);positionBadge();
- const ctx=rain.getContext('2d'),weather=createWeather();let elapsed=0,last=null,raf=0,w=0,h=0,lastPaint=0;
+ const ctx=rain.getContext('2d'),flyCtx=fireflyCanvas.getContext('2d'),weather=createWeather();let elapsed=0,rainElapsed=0,wet=0,last=null,raf=0,w=0,h=0,lastPaint=0,lastGrade=-Infinity,gradeKey='',paused=false;
+ // Freeze environment time during a drag, but let rain fall on its own clock.
+ function setInteracting(value){
+  if(paused===value)return;
+  paused=value;cancelAnimationFrame(raf);last=null;
+  if((!paused||wet>.001)&&!document.hidden)raf=requestAnimationFrame(frame);
+ }
+ root.GardenEnvironment={setInteracting};
+ document.addEventListener('pointerup',()=>setInteracting(false));
+ document.addEventListener('pointercancel',()=>setInteracting(false));
+ window.addEventListener('blur',()=>setInteracting(false));
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const fireflies=Array.from({length:15},(_,i)=>({x:.12+Math.random()*.76,y:i<5?.13+Math.random()*.14:.79+Math.random()*.13,seed:Math.random()*Math.PI*2,speed:.18+Math.random()*.22,radius:1.2+Math.random()*.8}));
  const drops=Array.from({length:115},()=>({x:Math.random(),y:Math.random(),speed:240+Math.random()*240,length:15+Math.random()*22,near:Math.random()>.65}));
- function resize(){w=viewport.clientWidth;h=viewport.clientHeight;const dpr=Math.min(devicePixelRatio||1,2);rain.width=w*dpr;rain.height=h*dpr;ctx?.setTransform(dpr,0,0,dpr,0,0);}
+ function resize(){w=viewport.clientWidth;h=viewport.clientHeight;const dpr=Math.min(devicePixelRatio||1,2);for(const canvas of [rain,fireflyCanvas]){canvas.width=w*dpr;canvas.height=h*dpr;canvas.getContext('2d')?.setTransform(dpr,0,0,dpr,0,0);}}
  new ResizeObserver(resize).observe(viewport);resize();
  function frame(now){
-  const dt=last===null?0:Math.max(0,(now-last)/1000);last=now;elapsed+=dt;
+  if(document.hidden||(paused&&wet<=.001))return;
+  const dt=last===null?0:Math.max(0,(now-last)/1000);last=now;rainElapsed+=dt;if(!paused)elapsed+=dt;
   if(now-lastPaint>=33){
-   lastPaint=now;const p=phase(elapsed),wet=weather.sample(elapsed);
+   lastPaint=now;const p=phase(elapsed);if(!paused)wet=weather.sample(elapsed);
+   // Slow day/night transitions need at most 10 updates/sec, and stable phases none.
+   if(!paused&&now-lastGrade>=100){
+   lastGrade=now;
+   const key=[p.name,p.night.toFixed(3),p.warm.toFixed(3),wet.toFixed(3)].join(':');
+   if(key!==gradeKey){gradeKey=key;
    // Multiply preserves the paper texture; soft light adds chroma instead of a gray veil.
    const r=Math.round(255-126*p.night-18*wet),g=Math.round(255-36*p.warm-103*p.night-12*wet),b=Math.round(255-78*p.warm-18*p.night-5*wet);
    tint.style.background=`rgb(${r},${g},${b})`;
@@ -63,13 +80,16 @@
    moonlight.style.opacity=p.night*(1-wet*.8);
    const text=`${p.night>.7?'☾':p.name==='白天'?'☀':'◒'} ${p.name} · ${wet>.05?'小雨':'晴'} `;
    if(badge.textContent!==text)badge.textContent=text;
+   }
+   }
    if(ctx){ctx.clearRect(0,0,w,h);if(wet>.001){
     for(const near of [false,true]){ctx.strokeStyle=`rgba(225,242,255,${wet*(near?.7:.32)})`;ctx.lineWidth=near?1.5:.8;ctx.beginPath();
-     for(const d of drops){if(d.near!==near)continue;const y=reduced.matches?d.y*h:(d.y*h+elapsed*d.speed)%(h+60)-30;const x=(d.x*w-y*.23+w)%w;ctx.moveTo(x,y);ctx.lineTo(x-d.length*.23,y+d.length);}
+     for(const d of drops){if(d.near!==near)continue;const y=reduced.matches?d.y*h:(d.y*h+rainElapsed*d.speed)%(h+60)-30;const x=(d.x*w-y*.23+w)%w;ctx.moveTo(x,y);ctx.lineTo(x-d.length*.23,y+d.length);}
      ctx.stroke();
     }
-   }
-    // Five upper and ten lower drifting lights; the center remains clear.
+   }}
+   if(flyCtx&&!paused){const ctx=flyCtx;ctx.clearRect(0,0,w,h);
+    // Separate canvas keeps the glow still while rain continues during a drag.
     if(p.night>.001){for(const f of fireflies){
      const t=reduced.matches?0:elapsed*f.speed,x=f.x*w+Math.sin(t+f.seed)*w*.035+Math.sin(t*.43+f.seed)*w*.015,y=f.y*h+Math.cos(t*.73+f.seed)*h*.018;
      const alpha=p.night*(1-wet*.7)*(reduced.matches?.65:.4+.6*(.5+.5*Math.sin(t*1.6+f.seed)));
@@ -80,6 +100,6 @@
   }
   raf=requestAnimationFrame(frame);
  }
- document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(raf);last=null;if(!document.hidden)raf=requestAnimationFrame(frame);});
+ document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(raf);last=null;if(!document.hidden&&(!paused||wet>.001))raf=requestAnimationFrame(frame);});
  raf=requestAnimationFrame(frame);
 })(typeof window==='undefined'?globalThis:window);
