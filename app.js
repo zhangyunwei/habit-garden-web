@@ -3,7 +3,8 @@ const asset=path=>window.GARDEN_ASSETS?.[path]||path;
 const G=Garden,$=id=>document.getElementById(id),KEY='habit-garden-web-v1';
 let state=G.initial(),storageOK=true,storageError=null;
 try{const raw=localStorage.getItem(KEY);if(raw){const loaded=G.load(raw);state=loaded.state;storageError=loaded.error;if(loaded.error)console.warn('Garden save reset:',loaded.error);}}catch(e){storageOK=false;}
-let mode='browse',selectedSeed='daisy',draft=null,selectedObject=null,modalType=null,modalTab='seeds',gesture=null,queuedLevels=[],toastTimer,audioCtx,confirmAction=null,previousFocus=null;
+let mode='browse',selectedSeed='daisy',draft=null,selectedObject=null,modalType=null,modalTab='seeds',gesture=null,queuedLevels=[],toastTimer,confirmAction=null,previousFocus=null;
+window.GardenAudio?.setEffects(state.sound);
 let seedPlot=null;
 const seedBubble=document.createElement('section');seedBubble.id='seedBubble';seedBubble.hidden=true;seedBubble.setAttribute('aria-label','选择植物播种');$('game').append(seedBubble);
 let camera={x:0,y:0,z:1,base:1,initialized:false},lastAnimalHello=0,talkId=null,talkTimer=null,talkFading=false;
@@ -19,6 +20,7 @@ function hideTalk(fade=true){
 }
 function showTalk(id){
  if(!talkLines[id]||mode==='edit')return;
+ sound(id);
  if(talkId===id){hideTalk(true);return;}
  hideTalk(false);talkId=id;talkFading=false;
  document.querySelectorAll('.animal-wrap .bubble').forEach(el=>{if(el.closest('[data-animal]')?.dataset.animal!==id){el.hidden=true;el.textContent='';el.classList.remove('fade');el.style.transform='';}});
@@ -56,7 +58,7 @@ function syncWarehouseHand(){
 }
 function html(el,value){value=value.replace(/src="(assets\/[^"]+)"/g,(_,path)=>`src="${asset(path)}"`);if(el.innerHTML!==value)el.innerHTML=value;}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2800);}
-function sound(kind='tap'){if(!state.sound)return;try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();audioCtx.resume();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),gain=audioCtx.createGain();o.connect(gain);gain.connect(audioCtx.destination);o.type='sine';o.frequency.setValueAtTime(kind==='harvest'?720:kind==='buy'?540:380,t);o.frequency.exponentialRampToValueAtTime(kind==='harvest'?1100:260,t+.13);gain.gain.setValueAtTime(.055,t);gain.gain.exponentialRampToValueAtTime(.001,t+.17);o.start(t);o.stop(t+.18);}catch(e){/* Audio is optional. */}}
+function sound(kind='tap'){window.GardenAudio?.setEffects(state.sound);if(state.sound)window.GardenAudio?.effect(kind);}
 function save(){if(G.rescue(state))toast('获得 2 颗应急雏菊种子，继续经营花园吧');try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true;}catch(e){storageOK=false;toast('当前浏览器无法保存，请在设置中导出存档');}}
 function run(fn){try{const result=fn();save();render();return result;}catch(e){toast(e.message);return null;}}
 function tutorialAllowed(action){if(state.tutorial==='done')return true;if(['warehouse','sell'].includes(state.tutorial)&&action==='warehouse')return true;toast('先跟着下方提示，完成第一次种植、收获和出售吧');return false;}
@@ -68,7 +70,7 @@ function header(){const s=current(),l=G.level(s),start=G.thresholds[l-1],end=G.t
  $('modeLabel').textContent={browse:'自由浏览 · 拖动探索花园',plant:'播种中 · 拖过空土地连续播种',harvest:'收获中 · 拖过成熟植物连续收获',edit:'编辑中 · 仅亮起的草地区域可摆放'}[mode];
 }
 function renderPlots(){const s=current();s.plots.forEach((plot,i)=>{let el=$('plot'+i);if(!el){el=document.createElement('button');el.id='plot'+i;el.className='plot';el.dataset.plot=i;const p=G.plotPositions[i];el.style.left=p.x+'px';el.style.top=p.y+'px';$('plots').append(el);}const st=G.stage(plot.plant),locked=!plot.open&&G.level(s)<i-2,ready=st?.remaining===0;const guided=(state.tutorial==='land'||state.tutorial==='seed'||state.tutorial==='harvest')&&i===0;
- el.className=`plot ${locked?'locked':!plot.open?'unlockable':''} ${ready?'ready':''} ${guided?'guide-target':''} ${(mode==='plant'&&plot.open&&!plot.plant)||(mode==='harvest'&&ready)?'valid':''}`;
+ el.className=`plot ${locked?'locked':!plot.open?'unlockable':''} ${ready?'ready':''} ${guided?'guide-target':''}`;
  const label=!plot.open?(locked?`🔒 ${i-2} 级解锁`:`开垦 ${[15,20,30,40][i-4]}`):!plot.plant?(mode==='plant'?'点此播种':'＋ 播种'):ready?'收获':`${st.remaining} 秒`;
  el.setAttribute('aria-label',`第 ${i+1} 块土地，${plot.plant?G.plants.find(p=>p.id===plot.plant.id).name+'，':''}${label}`);
  html(el,`<img class="soil" src="assets/coral/sprites/plots/plot_${plot.open?'empty':locked?'locked':'unlockable'}.png" alt="">${plot.plant?`<img class="plant" src="${plantImg(plot.plant.id,st.stage)}" alt="">`:''}${!plot.open?`<span class="plot-lock-group"><img class="plot-lock" src="assets/coral/icons/core/icon_lock.png" alt="">${!locked?'<span class="plot-unlock-label">可解锁</span>':''}</span>`:''}${guided?'<img class="hint-hand" src="assets/coral/icons/core/icon_tutorial_hand.png" alt="">':''}`);
@@ -94,10 +96,11 @@ function applyCamera(){const r=$('viewport').getBoundingClientRect();camera.z=Ma
 function zoom(d){if(mode!=='browse'||modalType)return;const r=$('viewport').getBoundingClientRect(),x=(r.width/2-camera.x)/camera.scale,y=(r.height/2-camera.y)/camera.scale;camera.z=Math.min(1.3,Math.max(.8,camera.z+d));const scale=Math.max(camera.base*camera.z,r.width/750,r.height/1500);camera.x=r.width/2-x*scale;camera.y=r.height/2-y*scale;applyCamera();}
 function mapPoint(e){const r=$('viewport').getBoundingClientRect();return{x:(e.clientX-r.left-camera.x)/camera.scale,y:(e.clientY-r.top-camera.y)/camera.scale};}
 function fly(i,id,xp){const a=$('plot'+i).getBoundingClientRect(),b=$('warehouse').getBoundingClientRect(),g=$('game').getBoundingClientRect();const img=document.createElement('img');img.src=asset(plantImg(id));img.className='fly';img.style.left=a.left+a.width/2-g.left+'px';img.style.top=a.top-g.top+'px';img.style.setProperty('--dx',b.left-a.left-a.width/2+'px');img.style.setProperty('--dy',b.top-a.top+'px');$('fx').append(img);setTimeout(()=>img.remove(),700);const star=document.createElement('img');star.src=asset('assets/coral/icons/core/icon_exp.png');star.className='fly';const l=$('level').getBoundingClientRect();star.style.left=img.style.left;star.style.top=img.style.top;star.style.setProperty('--dx',l.left-a.left-a.width/2+'px');star.style.setProperty('--dy',l.top-a.top+'px');$('fx').append(star);setTimeout(()=>star.remove(),700);const txt=document.createElement('span');txt.className='float-text';txt.textContent='+'+xp+' 经验';txt.style.left=img.style.left;txt.style.top=img.style.top;$('fx').append(txt);setTimeout(()=>txt.remove(),1000);$('warehouse').querySelector('img:not(.hint-hand)')?.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:400});}
-function doPlant(i){if(['land','warehouse','sell'].includes(state.tutorial))return;if(state.tutorial==='seed'&&i!==0){toast('先种下发光的第一格吧');return;}const result=run(()=>G.plant(state,i,selectedSeed));if(result){sound();if(result.free)toast('第一株免费！3 秒后就能收获');}else{$('plot'+i).classList.add('invalid');}}
+function doPlant(i){if(['land','warehouse','sell'].includes(state.tutorial))return;if(state.tutorial==='seed'&&i!==0){toast('先种下发光的第一格吧');return;}const result=run(()=>G.plant(state,i,selectedSeed));if(result){sound('plant');if(result.free)toast('第一株免费！3 秒后就能收获');}else{$('plot'+i).classList.add('invalid');}}
 function doHarvest(i){const result=run(()=>G.harvest(state,i));if(result){sound('harvest');fly(i,result.id,result.xp);queuedLevels.push(...result.unlocks);if(state.tutorial==='warehouse')setMode('browse');}else $('plot'+i).classList.add('invalid');}
 function levelPopup(){if(!queuedLevels.length||gesture||!$('confirm').hidden)return;const levels=[...queuedLevels];queuedLevels=[];const l=Math.max(...levels);ask(`家园升到 ${l} 级啦！`,`<div class="level-hero">✦ ${l} ✦</div>解锁 <b>${G.plants[l-1].name}</b>，赠送 1 颗种子。<br>还有${G.decorations[l-1].name}和第 ${l+3} 块土地${l===2?'，以及卡皮巴拉':l===4?'，以及熊猫':''}等你发现。`,()=>{},'知道了',false);}
 function plotClick(i){if(modalType||mode==='edit')return;const plot=state.plots[i];if(!plot.open&&G.level(state)<i-2){toast(`家园 ${i-2} 级解锁`);return;}if(['warehouse','sell'].includes(state.tutorial)){toast('先打开仓库出售收获物吧');return;}if(!plot.open){if(!tutorialAllowed('unlock'))return;const cost=[15,20,30,40][i-4];ask('开垦一块新土地',`家园 ${i-2} 级可解锁，当前已达到。<br>第 ${i+1} 块土地需要 <b>${cost} 金币</b>。<br>你现在有 ${state.coins} 金币。`,()=>{if(run(()=>G.unlock(state,i))!==null){sound('buy');toast('土地开垦成功，种点新东西吧');}},'确认开垦');return;}
+ sound('land');
  if(state.tutorial==='land'){if(i!==0){toast('先点击发光的第一块土地');return;}state.tutorial='seed';save();openSeeds(i);return;}
  if(plot.plant){if(G.stage(plot.plant).remaining===0){openHarvest(i);}else toast(`还需要 ${G.stage(plot.plant).remaining} 秒，植物不会枯萎哦`);}else openSeeds(i);}
 function ask(title,message,fn,label='确认',cancel=true){previousFocus=document.activeElement;confirmAction=fn;const el=$('confirm');html(el,`<section class="sheet" role="alertdialog" aria-modal="true" aria-label="${title}"><div class="sheet-head"><h2>${title}</h2></div><div class="confirm-body">${message}</div><div class="confirm-actions">${cancel?button('取消','confirm-no','secondary'):''}${button(label,'confirm-yes')}</div></section>`);el.hidden=false;el.querySelector('button')?.focus();}
@@ -121,6 +124,10 @@ function renderModal(){const type=modalType,tab=modalTab,s=current();let title='
  }
  if(type==='levels'){title='花园成长手册';sub='收获获得经验；购买、出售与装扮不消耗经验。';content=G.plants.map((p,i)=>`<div class="level-row"><span>Lv.${i+1}</span><div><b>${G.level(state)>=i+1?'✓ ':''}${p.name} · ${G.thresholds[i]} 累计经验</b><p>${G.decorations[i].name}${i?' · 第 '+(i+4)+' 块土地':''}${i===1?' · 卡皮巴拉':i===3?' · 熊猫':''}</p></div></div>`).join('');}
  if(type==='settings'){title='花园设置';sub='你的花园会记住每一次播种与花开。';content=`<div class="setting-row"><span>轻柔的操作音效</span>${button(state.sound?'已开启':'已关闭','sound','secondary')}</div><div class="setting-row"><span>本地存档</span><b>${storageOK?'自动保存已开启':'当前无法写入'}</b></div><p class="sheet-sub" style="margin:12px 0">进度保存在当前浏览器。离开后植物继续生长，不会枯萎。更换浏览器前，可以导出存档再导入。</p><div class="setting-row">${button('导出存档','export','secondary')}${button('导入存档','import','secondary')}<input id="importFile" type="file" accept=".json" hidden></div><div class="setting-row"><span>重新体验第一天</span>${button('重置游戏进度','reset','danger')}</div><p class="sheet-sub" style="margin:14px 0">玩法：点击土地选择种子，按住拖过多块土地连续播种。成熟后用同样方式收获，到仓库出售。鼠标滚轮或双指缩放地图。编辑时点击物品，再拖动或点击草地放置。</p>`;}
+ if(type==='settings'){
+  const audio=window.GardenAudio?.getSettings()||{music:false,volume:0};
+  content=`<div class="setting-row"><span>轻柔背景音乐</span>${button(audio.music?'已开启':'已关闭','music','secondary')}</div><div class="setting-row audio-volume-row"><label for="gardenVolume">声音大小</label><input id="gardenVolume" type="range" min="0" max="100" value="${Math.round(audio.volume*100)}" aria-label="音乐和音效音量"><output id="gardenVolumeValue" for="gardenVolume">${Math.round(audio.volume*100)}%</output></div>`+content;
+ }
  html($('modal'),`<section class="sheet" role="dialog" aria-modal="true" aria-label="${title}"><div class="sheet-head"><h2>${title}</h2>${s.tutorial==='sell'?'':`<button data-action="close-modal" aria-label="关闭">×</button>`}</div><p class="sheet-sub">${sub}</p>${tabs}<div class="sheet-content">${content}</div>${footer?`<div class="sheet-footer">${footer}</div>`:''}</section>`);
 }
 function startEdit(){hideTalk(false);closeSeeds();draft=G.clone(state);mode='edit';selectedObject=null;render();requestAnimationFrame(()=>resizeCamera(false));}
@@ -141,12 +148,15 @@ function action(value){const [a,id,key,count]=value.split(':');
  if(a==='edit-cancel'){endGesture();draft=null;setMode('browse');toast('已取消，本次调整已恢复');return;}
  if(a==='edit-confirm'){if(!draft)return;endGesture();state=draft;draft=null;save();setMode('browse');toast('花园布置已保存');return;}
  if(a==='sound'){state.sound=!state.sound;save();sound();renderModal();return;}
+ if(a==='music'){const audio=window.GardenAudio;audio?.setMusic(!audio.getSettings().music);renderModal();return;}
  if(a==='reset'){ask('重新开始这座花园？','这会清除当前等级、金币、种植、库存、动物、装饰、土地及引导进度。恢复为 1 级、50 金币、4 颗雏菊种子和 4 块土地。',()=>{state=G.initial();draft=null;queuedLevels=[];mode='browse';save();closeModal();resizeCamera(true);toast('新的花园，新的开始');},'确认重置');return;}
  if(a==='export'){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='习惯花园存档.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}
  if(a==='import'){$('importFile').click();return;}
 }
 $('game').addEventListener('click',e=>{const editTabButton=e.target.closest('[data-edit-tab]');if(editTabButton){editTab=editTabButton.dataset.editTab;selectedObject=null;renderTray();renderObjects();return;}const b=e.target.closest('[data-action]');if(b&&!b.disabled){action(b.dataset.action);return;}const tab=e.target.closest('[data-tab]');if(tab&&!tab.disabled){modalTab=tab.dataset.tab;renderModal();}});
 $('modal').addEventListener('input',e=>{if(e.target.matches('[data-qty]'))updateQty(e.target.dataset.qty,e.target.value);});
+$('modal').addEventListener('input',e=>{if(e.target.id==='gardenVolume'){window.GardenAudio?.setVolume(Number(e.target.value)/100);$('gardenVolumeValue').textContent=e.target.value+'%';}});
+$('game').addEventListener('click',e=>{const b=e.target.closest('.hud button,#nav button');if(b&&!b.disabled)sound('tap');});
 $('modal').addEventListener('change',async e=>{if(e.target.id!=='importFile')return;const file=e.target.files[0];if(!file)return;if(file.size>1024*1024){toast('存档文件过大，请选择游戏导出的 JSON 文件');return;}const loaded=G.load(await file.text());if(loaded.error){toast('无法导入：存档内容损坏');return;}ask('导入这份花园存档？',`存档为 ${G.level(loaded.state)} 级、${loaded.state.coins} 金币。<br>确认后替换当前花园进度。`,()=>{state=loaded.state;draft=null;mode='browse';save();closeModal();resizeCamera(true);toast('存档导入成功');},'确认导入');});
 $('shop').onclick=()=>{if(tutorialAllowed('shop')){setMode('browse');openModal('shop');}};$('warehouse').onclick=()=>{if(tutorialAllowed('warehouse')){setMode('browse');openModal('warehouse');}};$('edit').onclick=()=>{if(tutorialAllowed('edit')){if(mode==='edit')action('edit-confirm');else startEdit();}};$('settings').onclick=()=>{if(tutorialAllowed('settings')){setMode('browse');openModal('settings');}};$('levelButton').onclick=()=>{if(tutorialAllowed('levels'))openModal('levels');};
 const storeBubble=document.createElement('button');storeBubble.id='storeBubble';storeBubble.textContent='收回';storeBubble.hidden=true;$('game').append(storeBubble);
@@ -154,8 +164,17 @@ function objectElement(key){return typeof key==='number'?$('objects').querySelec
 function showStore(){const el=objectElement(selectedObject);if(!el||mode!=='edit')return;const r=el.getBoundingClientRect(),g=$('game').getBoundingClientRect();storeBubble.style.left=Math.max(32,Math.min(g.width-32,r.left+r.width/2-g.left))+'px';storeBubble.style.top=Math.max(75,r.top-g.top-40)+'px';storeBubble.hidden=false;}
 storeBubble.onclick=()=>{if(mode!=='edit'||selectedObject===null)return;const key=selectedObject,el=objectElement(key);if(!el)return;const r=el.getBoundingClientRect(),tray=$('tray').getBoundingClientRect(),fly=document.createElement('img');fly.src=el.src;fly.className='store-flight';Object.assign(fly.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});document.body.append(fly);storeBubble.hidden=true;G.store(draft,key);selectedObject=null;render();const animation=fly.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${tray.left+tray.width/2-r.left-r.width/2}px,${tray.top+tray.height/2-r.top-r.height/2}px) scale(.3)`,opacity:0}],{duration:550,easing:'ease-in',fill:'forwards'});animation.finished.then(()=>fly.remove(),()=>fly.remove());};
 function toolAt(e){const bounds=$('viewport').getBoundingClientRect();if(e.clientX<bounds.left||e.clientX>bounds.right||e.clientY<bounds.top||e.clientY>bounds.bottom)return;const p=mapPoint(e),i=G.plotAt(p.x,p.y);if(i<0||!gesture||!['plant','harvest'].includes(gesture.type))return;if(gesture.type==='plant'&&state.tutorial==='seed'&&i!==0)return;if(gesture.visited.has(i))return;if(gesture.type==='harvest'&&(!state.plots[i].plant||G.stage(state.plots[i].plant).remaining!==0))return;if(gesture.type==='plant'&&(!state.plots[i].open||state.plots[i].plant))return;gesture.visited.add(i);if(gesture.type==='plant')doPlant(i);else doHarvest(i);}
-function ghost(e,src){$('dragGhost').classList.remove('animal-drag-ghost');for(const key of ['width','height','transform'])$('dragGhost').style[key]='';$('dragGhost').style.display='block';$('dragGhost').style.left=e.clientX+'px';$('dragGhost').style.top=e.clientY+'px';html($('dragGhost'),`<img src="${src}" alt="">`);}
-function endGesture(){clearTimeout(gesture?.holdTimer);storeBubble.hidden=true;if(['plant','harvest'].includes(gesture?.type)){mode='browse';render();}gesture=null;pointers.clear();if(mode==='edit')renderObjects();$('dragGhost').style.display='none';setTimeout(levelPopup,750);}
+function ghost(e,src,rect=null){
+ window.GardenEnvironment?.setInteracting(true);
+ const el=$('dragGhost');
+ if(el.classList.contains('animal-drag-ghost')!==Boolean(rect)){
+  el.classList.toggle('animal-drag-ghost',Boolean(rect));el.style.width=rect?rect.width+'px':'';el.style.height=rect?rect.height+'px':'';
+ }
+ el.style.display='block';el.style.left='0px';el.style.top='0px';
+ el.style.transform=rect?`translate3d(${rect.left}px,${rect.top}px,0)`:`translate3d(${e.clientX}px,${e.clientY}px,0) translate(-50%,-70%)`;
+ if(el.dataset.source!==src){html(el,`<img src="${src}" alt="">`);el.dataset.source=src;}
+}
+function endGesture(){window.GardenEnvironment?.setInteracting(false);clearTimeout(gesture?.holdTimer);storeBubble.hidden=true;if(['plant','harvest'].includes(gesture?.type)){mode='browse';render();}gesture=null;pointers.clear();if(mode==='edit')renderObjects();$('dragGhost').style.display='none';setTimeout(levelPopup,750);}
 document.addEventListener('pointerdown',e=>{
  if(!e.target.closest('#game')||!$('confirm').hidden||modalType||e.button>0)return;
  if(e.target===storeBubble)return;storeBubble.hidden=true;
@@ -191,7 +210,17 @@ document.addEventListener('pointermove',e=>{if(!gesture)return;if(pointers.has(e
  if(['plant','harvest'].includes(gesture.type)){ghost(e,gesture.type==='plant'?seedImg(selectedSeed):'assets/coral/icons/core/icon_sickle.png');toolAt(e);return;}
  if(gesture.type==='talk'){const dx=e.clientX-gesture.startX,dy=e.clientY-gesture.startY;if(Math.hypot(dx,dy)>6){clearTimeout(gesture.holdTimer);gesture.type='pan';gesture.moved=true;camera.x=gesture.x+dx;camera.y=gesture.y+dy;applyCamera();}return;}
  if(gesture.type==='pan'){const dx=e.clientX-gesture.startX,dy=e.clientY-gesture.startY;if(Math.hypot(dx,dy)>6)gesture.moved=true;camera.x=gesture.x+dx;camera.y=gesture.y+dy;applyCamera();}
- if(gesture.type==='edit'){gesture.moved=gesture.moved||Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>8;if(!gesture.moved)return;storeBubble.hidden=true;const p=mapPoint(e);p.x+=gesture.offsetX||0;p.y+=gesture.offsetY||0;const x=p.x,y=p.y;const src=typeof selectedObject==='number'?decoImg(draft.decorations.find(d=>d.uid===selectedObject).id):animalImg(selectedObject);const animal=typeof selectedObject==='string'&&$('animals').querySelector(`[data-animal="${selectedObject}"]`);if(animal){animal.style.left=p.x+'px';animal.style.top=p.y+'px';animal.classList.add('dragging');const r=animal.querySelector('img').getBoundingClientRect();ghost(e,src);Object.assign($('dragGhost').style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',transform:'none'});$('dragGhost').classList.add('animal-drag-ghost');}else ghost(e,src);$('dragGhost').style.filter=G.validPosition(draft,x,y,selectedObject)?'drop-shadow(0 0 6px #a2ef54)':'drop-shadow(0 0 6px #ee5d4a)';}
+ if(gesture.type==='edit'){
+  gesture.moved=gesture.moved||Math.hypot(e.clientX-gesture.startX,e.clientY-gesture.startY)>8;if(!gesture.moved)return;
+  storeBubble.hidden=true;const p=mapPoint(e);p.x+=gesture.offsetX||0;p.y+=gesture.offsetY||0;
+  const src=typeof selectedObject==='number'?decoImg(draft.decorations.find(d=>d.uid===selectedObject).id):animalImg(selectedObject);
+  const animal=typeof selectedObject==='string'&&$('animals').querySelector(`[data-animal="${selectedObject}"]`);
+  if(animal){
+   if(!gesture.visual){const r=animal.querySelector('img').getBoundingClientRect();gesture.visual={width:r.width,height:r.height,dx:r.left-gesture.startX,dy:r.top-gesture.startY};animal.classList.add('dragging');}
+   const v=gesture.visual;ghost(e,src,{left:e.clientX+v.dx,top:e.clientY+v.dy,width:v.width,height:v.height});
+  }else ghost(e,src);
+  $('dragGhost').style.filter=G.validPosition(draft,p.x,p.y,selectedObject)?'drop-shadow(0 0 6px #a2ef54)':'drop-shadow(0 0 6px #ee5d4a)';
+ }
 });
 document.addEventListener('pointerup',e=>{if(!gesture)return;if(gesture.type==='pinch'){endGesture();return;}if(e.pointerId!==gesture.id)return;const g=gesture;clearTimeout(g.holdTimer);gesture=null;pointers.clear();if(g.type==='edit-pending'){selectedObject=g.key;renderObjects();renderTray();}if(g.type==='seed-pending'&&!g.disabled){selectedSeed=g.seed;closeSeeds();doPlant(g.target);mode='browse';render();}if(g.type==='harvest-pending'){closeSeeds();doHarvest(g.target);}if(['plant','harvest','harvest-pending'].includes(g.type)){mode='browse';render();}$('dragGhost').style.display='none';$('dragGhost').style.filter='';if(g.type==='talk-hide')hideTalk(true);if(g.type==='talk'&&!g.moved)showTalk(g.key);if((g.type==='pan'||g.type==='tap')&&!g.moved&&g.plot!==null)plotClick(g.plot);if((g.type==='edit'&&g.moved)||g.type==='edit-place'){const trayRect=$('tray').getBoundingClientRect(),overTray=e.clientX>=trayRect.left&&e.clientX<=trayRect.right&&e.clientY>=trayRect.top&&e.clientY<=trayRect.bottom;if(g.type==='edit'&&g.moved&&overTray){const placed=typeof selectedObject==='number'?draft.decorations.find(d=>d.uid===selectedObject)?.placed:draft.animals[selectedObject]?.active;if(placed)storeBubble.onclick();}else if(!e.target.closest('#tray,#nav,header')){const p=mapPoint(e);placeSelected(p.x+(g.offsetX||0),p.y+(g.offsetY||0));}}if(mode==='edit'){renderObjects();if(g.type==='edit'&&!g.moved)showStore();}if(state.tutorial==='harvest'&&mode==='plant')setMode('browse');setTimeout(levelPopup,750);});
 document.addEventListener('pointercancel',endGesture);window.addEventListener('blur',endGesture);$('viewport').addEventListener('wheel',e=>{if(mode==='browse'&&!modalType){e.preventDefault();zoom(e.deltaY>0?-.06:.06);}},{passive:false});
