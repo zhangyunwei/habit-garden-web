@@ -87,12 +87,12 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 .plot.locked{opacity:1;filter:none}
 .plot.locked .soil{opacity:.5}
 .plot.unlockable{opacity:1;filter:none}
-.plot.guide-target{z-index:6}
-.plot .hint-hand{width:76px;height:76px;object-fit:contain;right:5px;top:12px;z-index:3;pointer-events:none;animation:tutorialTap 1.5s ease-in-out infinite}
+/* Tutorial cue sits outside the depth-sorted plot stacking contexts. */
+#tutorialHand{position:absolute;width:76px;height:76px;object-fit:contain;z-index:2;pointer-events:none;animation:tutorialTap 1.5s ease-in-out infinite}
 @keyframes tutorialTap{0%,100%{transform:translate(6px,6px)}50%{transform:translate(0,0)}}
 #nav button,#nav button:disabled,#nav button img,#nav button>span{opacity:1}
 #nav button>span{background:#fff7df}
-@media(prefers-reduced-motion:reduce){.plot .hint-hand{animation:none}}
+@media(prefers-reduced-motion:reduce){#tutorialHand{animation:none}}
 .coins{position:absolute;right:66px}
 .hud .warehouse{position:absolute;right:0}
 .level-emblem{overflow:hidden}.level-emblem img{content:url("assets/coral/sprites/plants/daisy/plant_daisy_mature.png");width:42px;height:42px;max-width:none;transform:translateY(-2px);object-fit:contain}
@@ -189,3 +189,15 @@ body{padding:16px;overflow:hidden}#game{width:375px;height:812px;max-height:calc
 @keyframes plantDance{0%,100%{transform:translateX(-50%) rotate(0)}50%{transform:translateX(-50%) rotate(3deg)}}
 .plot.ready .plant{animation:plantDance 2s infinite}
 .audio-volume-row{gap:10px}.audio-volume-row input{flex:1;min-width:50px;max-width:150px;accent-color:#78934b}.audio-volume-row output{min-width:36px;text-align:right;font-size:12px}
+
+/* Animals and decorations share a depth context underneath the weather layers. */
+#sceneLayer{position:absolute;inset:0;z-index:1;pointer-events:none}
+#plots,#objects,#animals{display:contents;filter:none}
+#sceneLayer .object{filter:url(#spriteAtmosphere) drop-shadow(0 4px 2px #3e431c22)}
+#sceneLayer .animal-wrap{width:0;height:0;pointer-events:none}
+#sceneLayer .animal-wrap .animal{position:absolute;left:-90px;top:-162px;width:180px;height:180px;transform:none;scale:1;animation:none;filter:url(#spriteAtmosphere);pointer-events:auto;touch-action:none;cursor:pointer}
+#sceneLayer .animal-shadow{position:absolute;left:-34px;top:-9px;width:68px;height:18px;border-radius:50%;background:#46502b24;pointer-events:none}
+#world.editing #sceneLayer .animal-wrap .animal{cursor:grab}
+#sceneLayer .animal-wrap.dragging{opacity:0;pointer-events:none}
+#sceneLayer .animal-wrap .bubble{top:-155px}
+#world.editing #editGrid{z-index:0}
