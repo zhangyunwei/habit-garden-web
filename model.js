@@ -59,7 +59,7 @@ const total=s=>plants.reduce((sum,p)=>sum+s.harvest[p.id]*price(s,p.id),0);
 function sellAll(s){check(total(s)>0,'仓库还没有收获物');let gain=0;for(const p of plants)if(s.harvest[p.id])gain+=sell(s,p.id,s.harvest[p.id]);return gain;}
 function unlock(s,i){check(i>=4&&i<8,'土地编号无效');check(!s.plots[i].open,'土地已经开垦');check(level(s)>=i-2,`家园 ${i-2} 级解锁`);check(s.plots[i-1].open,'请先开垦前一块土地');const cost=[15,20,30,40][i-4];check(s.coins>=cost,`金币不足，还差 ${cost-s.coins} 金币`);s.coins-=cost;s.plots[i].open=true;}
 function toggleAnimal(s,id){check(s.animals[id]?.owned,'请先购买动物');s.animals[id].active=!s.animals[id].active;return s.animals[id].active;}
-function rescue(s){if(s.coins===0&&Object.values(s.seeds).every(n=>n===0)&&s.plots.every(p=>!p.plant)){s.seeds.daisy=2;return true;}return false;}
+function rescue(s){if(s.coins<5&&Object.values(s.seeds).every(n=>n===0)&&s.plots.every(p=>!p.plant)&&total(s)===0){s.seeds.daisy=2;return true;}return false;}
 // Shared isometric lattice: soil-shaped cells with a narrow grass seam.
 const editCells=[];
 for(let row=-8;row<=12;row++)for(let col=-8;col<=12;col++){
@@ -73,7 +73,7 @@ function validPosition(s,x,y,uid){const cell=cellAt(x,y);if(!cell||cell.plot)ret
 }
 function place(s,uid,x,y){check(validPosition(s,x,y,uid),'这里不能摆放，请选择空闲草地格子');const cell=cellAt(x,y),d=typeof uid==='number'?s.decorations.find(d=>d.uid===uid):s.animals[uid];check(d,'物品不存在');Object.assign(d,{x:cell.x,y:cell.y});if(typeof uid==='number')d.placed=true;else d.active=true;}
 function store(s,uid){if(typeof uid==='number'){const d=s.decorations.find(d=>d.uid===uid);check(d,'装饰不存在');d.placed=false;}else{check(s.animals[uid]?.owned,'动物不存在');s.animals[uid].active=false;}}
-function load(raw){try{const s=JSON.parse(raw);check(s?.version===1,'存档版本不支持');const int=n=>Number.isSafeInteger(n)&&n>=0;check(int(s.coins)&&int(s.xp)&&int(s.nextId)&&s.nextId>0,'数值损坏');
+function load(raw){try{const s=JSON.parse(raw),migratedRanch=s?.version===2;check(s?.version===1||migratedRanch,'存档版本不支持');if(migratedRanch){s.version=1;delete s.ranch;delete s.ranchGiftGranted;delete s.seeds?.grass;delete s.harvest?.grass;if(Array.isArray(s.plots))for(const p of s.plots)if(p?.plant?.id==='grass')p.plant=null;}const int=n=>Number.isSafeInteger(n)&&n>=0;check(int(s.coins)&&int(s.xp)&&int(s.nextId)&&s.nextId>0,'数值损坏');
  for(const key of ['seeds','harvest'])for(const p of plants)check(int(s[key]?.[p.id]),'库存损坏');
  check(Array.isArray(s.plots)&&s.plots.length===8,'土地损坏');s.plots.forEach((p,i)=>{check(typeof p.open==='boolean'&&(i>=4||p.open),'土地损坏');if(p.plant)check(p.open&&plants.some(x=>x.id===p.plant.id)&&Number.isFinite(p.plant.at)&&p.plant.at>=0&&Number.isFinite(p.plant.duration)&&p.plant.duration>0,'植物损坏');});
  check(Array.isArray(s.decorations),'装饰损坏');const ids=new Set();s.decorations.forEach(d=>{check(decorations.some(x=>x.id===d.id)&&int(d.uid)&&!ids.has(d.uid)&&d.uid<s.nextId&&typeof d.placed==='boolean'&&Number.isFinite(d.x)&&Number.isFinite(d.y),'装饰损坏');ids.add(d.uid);});for(const d of decorations)check(s.decorations.filter(x=>x.id===d.id).length<=5,'装饰超限');
@@ -86,7 +86,7 @@ function load(raw){try{const s=JSON.parse(raw);check(s?.version===1,'存档版�
   for(const {item,key,animal} of placed){const cell=editCells.filter(c=>validPosition(s,c.x,c.y,key)).sort((a,b)=>Math.hypot(a.x-item.x,a.y-item.y)-Math.hypot(b.x-item.x,b.y-item.y))[0];if(cell)Object.assign(item,{x:cell.x,y:cell.y,[animal?'active':'placed']:true});}
   s.layoutVersion=4;
  }
- return {state:s,error:null};
+ return {state:s,error:null,migratedRanch};
  }catch(e){return {state:initial(),error:e.message};}}
 const api={plants,decorations,animals,thresholds,plotPositions,plotHull,plotAt,editCells,cellAt,initial,clone,level,active,growth,price,stage,plant,harvest,buy,sell,total,sellAll,unlock,toggleAnimal,rescue,validPosition,place,store,load};
 if(typeof module!=='undefined')module.exports=api;root.Garden=api;
