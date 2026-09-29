@@ -13,9 +13,10 @@ css=(root/'style.css').read_text()
 for path,data in assets.items():
  css=css.replace(path,data)
 html=re.sub(r'<link rel="stylesheet" href="style.css[^"]*">',lambda _:'<style>'+css+'</style>',html)
+html=re.sub(r'<link rel="stylesheet" href="landscape.css[^"]*">',lambda _:'<style>'+(root/'landscape.css').read_text()+'</style>',html)
 scripts='<script>window.GARDEN_ASSETS='+json.dumps(assets,separators=(',',':'))+';</script>'
-for name in ['model.js','audio.js','animal-atlas.js','animal-motion.js','animal-renderer.js','app.js','environment.js']:
+for name in ['model.js','audio.js','animal-atlas.js','animal-motion.js','animal-renderer.js','app.js','environment.js','landscape.js']:
  scripts+='<script>'+(root/name).read_text().replace('</script','<\\/script')+'</script>'
-html=re.sub(r'<script src="model.js[^\"]*"></script>.*?<script src="environment.js[^\"]*"></script>',lambda _:scripts,html,flags=re.S)
+html=re.sub(r'<script src="model.js[^\"]*"></script>.*?<script src="landscape.js[^\"]*"></script>',lambda _:scripts,html,flags=re.S)
 out=root.parent/'习惯花园-双击即玩.html';out.write_text(html)
 print(f'Built {out.name}: {out.stat().st_size/1024/1024:.1f} MB; {len(assets)} embedded images')

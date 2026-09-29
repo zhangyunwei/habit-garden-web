@@ -1,0 +1,4 @@
+#world{width:1500px}
+.background{width:750.3px}
+.landscape-right{position:absolute;left:750px;top:0;width:750px;height:1500px;pointer-events:none}
+.environment-lights{width:750px;right:auto}
